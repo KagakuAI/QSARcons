@@ -1,0 +1,9 @@
+matplotlib
+compress-pickle==1.1.0
+gym==0.15.4
+git+https://github.com/cimm-kzn/CGRtools.git@master#egg=CGRtools[mrv]
+git+https://github.com/stsouko/CIMtools.git@master#egg=CIMtools
+git+https://github.com/stsouko/CGRdb.git@master#egg=CGRdb[postgres]
+git+https://github.com/pandylandy/RNNSynthesis.git@ga#egg=RNNSynthesis
+git+https://github.com/stsouko/LazyPony@master#egg=LazyPony
+git+https://github.com/pandylandy/CGRdbData.git@master#egg=CGRdbData
