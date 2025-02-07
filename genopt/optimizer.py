@@ -1,17 +1,19 @@
+import random
 from copy import deepcopy
-from genopt.utils import init_random_individual
-from .utils import init_population, flip_coin
-from .selectors import roulette_wheel_selection
-from .scalers import sigma_trunc_scaling
-from .crossovers import one_point_crossover
-from .mutators import uniform_mutation
 from random import randint
+from .utils import init_random_individual, init_population, flip_coin
+from .selector import roulette_wheel_selection
+from .scaler import sigma_trunc_scaling
+from .crossover import one_point_crossover
+from .mutator import uniform_mutation
 
 
-class SGA:
+class GeneticAlgorithm:
     
     def __init__(self, task='minimize', pop_size=10, cross_prob=0.8, mut_prob=0.1, elitism=True, n_cpu=1):
-        
+
+        random.seed(42)
+
         self.task = task
         self.fitness_func = None
         self.population = None
@@ -55,7 +57,6 @@ class SGA:
         self.population.calc_statistics()
         self.best_solution = self.best_individual()
 
-    
     def evaluate(self):
         self.population.evaluate()
         return self

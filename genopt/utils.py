@@ -1,22 +1,13 @@
 import os
 import csv
 import random
+import matplotlib.pyplot as plt
 from datetime import datetime
 from .population import Individual, Population
-import matplotlib.pyplot as plt
 
-random.seed(42)
 
 def init_random_individual(space, steps):
-    if steps == 'flex':
-        steps = random.randint(2, 10)
-    
-    ind = []
-    for i in range(steps):
-        gen = random.choice(space)
-        while gen in ind:
-            gen = random.choice(space)
-        ind.append(gen)
+    ind = random.sample(space, k=steps)
     return Individual(ind)
 
 

@@ -1,4 +1,3 @@
-from multiprocessing import Pool
 from statistics import pvariance, pstdev
 
 

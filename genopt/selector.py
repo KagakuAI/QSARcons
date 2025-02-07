@@ -1,5 +1,6 @@
 import random
-	
+
+
 def roulette_wheel_selection(pop):
     
     if pop.minimax == 'maximize':

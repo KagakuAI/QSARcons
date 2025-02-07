@@ -26,14 +26,14 @@ def linear_scaling(pop):
         if f < 0:
             f = 0.0
         pop[i].fitness = f
-		
+
     pop.calc_statistics()
-	
-	
+
+
 def sigma_trunc_scaling(pop):
 
     pop.calc_statistics()
-	
+
     c = 2
     
     rawAvg = pop.stats["rawAvg"]
@@ -46,9 +46,7 @@ def sigma_trunc_scaling(pop):
         
         if f < 0: 
             f = 0.0
-			
+
         pop[i].fitness = f
-		
+
     pop.calc_statistics()
-	
-	
