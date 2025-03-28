@@ -21,6 +21,7 @@ from molfeat.trans import MoleculeTransformer
 from molfeat.trans.fp import FPVecTransformer
 from molfeat.calc.pharmacophore import Pharmacophore2D
 
+
 def parse_data(data_path):
     data = pd.read_csv(data_path, header=None)
     
@@ -47,8 +48,8 @@ def process(benchmark_collection, coll_folder, bench_name, prediction_collection
     data_test = parse_data(os.path.join(bench_folder, 'test.csv'))
     
     # save true prop
-    res_test['Y_TRUE'] = [i[1] for i in data_test]
     res_train['Y_TRUE'] = [i[1] for i in data_train]
+    res_test['Y_TRUE'] = [i[1] for i in data_test]
     
     # calc 2D descriptors
     for descr_func, descr_name in descr_list:
@@ -72,14 +73,15 @@ def process(benchmark_collection, coll_folder, bench_name, prediction_collection
         # train machine learning model
         for model, method_name in ml_list:
 
-            # concat set descriptor calculation for stacking
-            y_pred = cross_val_predict(model, x_train_scaled, y_train, cv = cv, n_jobs = 1)
+            # concat cross-validation prediction from the training set for consensus and stacking building
+            y_pred = cross_val_predict(model, x_train_scaled, y_train, cv=cv, n_jobs=1)
             res_train[f'{descr_name}|{method_name}'] = y_pred
             res_train.to_csv(os.path.join(res_folder, f'{bench_name}_traincv.csv'), index=False)
 
+            # build the final 2D model
             model.fit(x_train_scaled, y_train)
             
-            # test set descriptor calculation
+            # make test set predictions
             y_pred = model.predict(x_test_scaled)
             res_test[f'{descr_name}|{method_name}'] = y_pred
             res_test.to_csv(os.path.join(res_folder, f'{bench_name}_test.csv'), index=False)
@@ -94,7 +96,7 @@ def prepare(benchmark_collection):
 
 
 descr_list = [
-              (MoleculeTransformer(featurizer='cats2d', dtype=float), "cats2d"), # fails sometimes
+                (MoleculeTransformer(featurizer='cats2d', dtype=float), "cats2d"), # fails sometimes
                 (MoleculeTransformer(featurizer='scaffoldkeys', dtype=float), "scaffoldkeys"),
                 (MoleculeTransformer(featurizer='secfp', dtype=float), "secfp"),
                 (MoleculeTransformer(featurizer='atompair-count', dtype=float), "atompair-count"),
@@ -128,7 +130,7 @@ ml_list = [
            ]
 
 # input data
-benchmark_collection =  Path("benchmark_collection_original").resolve()
+benchmark_collection =  Path("../benchmark_collection_original").resolve()
 
 # output data and calculations
 if __name__ == "__main__":
@@ -137,7 +139,7 @@ if __name__ == "__main__":
     if prediction_collection.exists():
         shutil.rmtree(prediction_collection)
 
-    with Pool(cpu_count() -1 ) as pool:
+    with Pool(cpu_count() - 1) as pool:
             list(pool.starmap(partial(process, 
                                 prediction_collection=prediction_collection, 
                                 descr_list=descr_list, 
