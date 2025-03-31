@@ -1,2 +1,2 @@
-# GACons
-QSAR consensus prediction with genetic algorithm
+# QSARcons
+QSAR consensus prediction
