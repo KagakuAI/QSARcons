@@ -54,6 +54,8 @@ def process(benchmark_collection, coll_folder, bench_name, prediction_collection
     os.makedirs(res_folder, exist_ok=True)
 
     # run benchmark 
+    res_test_default = pd.DataFrame()
+    res_train_default = pd.DataFrame()
     res_test = pd.DataFrame()
     res_train = pd.DataFrame()
 
@@ -82,16 +84,22 @@ def process(benchmark_collection, coll_folder, bench_name, prediction_collection
         x_train_scaled = scaler.fit_transform(x_train)
         x_test_scaled = scaler.transform(x_test)
 
-        cv = RepeatedKFold(n_splits=5, n_repeats=1, random_state=1)
+        cv = RepeatedKFold(n_splits=3, n_repeats=1, random_state=1)
 
         # train machine learning model
         for method_name in ml_dict:
+
+            print(bench_name, descr_name, method_name, flush=True)  # show progress
+            sys.stdout.write(' '.join((bench_name, descr_name, method_name)) + '\n')
+            sys.stdout.flush()
+
+            model_empty = deepcopy(ml_dict.get(method_name))  # check whether it is needed
+            
             model = ml_dict.get(method_name)
 
             # concat cross-validation prediction from the training set for consensus and stacking building
             y_pred = cross_val_predict(model, x_train_scaled, y_train, cv=cv, n_jobs=1)
-            res_train[f'{descr_name}|{method_name}'] = y_pred
-            res_train.to_csv(os.path.join(res_folder, f'{bench_name}_traincv.csv'), index=False)
+            res_train_default[f'{descr_name}|{method_name}'] = y_pred
 
             # build the final 2D model
             model.fit(x_train_scaled, y_train)
@@ -99,14 +107,21 @@ def process(benchmark_collection, coll_folder, bench_name, prediction_collection
             # make test set predictions
             y_pred = model.predict(x_test_scaled)
             res_test[f'{descr_name}|{method_name}'] = y_pred
+            # to csv default test
 
             # make test set predictions with hyperparameters optimized
-            model = (RandomizedSearchCV(model, hyper_parameters.get(method_name), n_iter=10, cv=5, error_score='raise', n_jobs=1))
+            model = (RandomizedSearchCV(model, hyper_parameters.get(method_name), n_iter=30, cv=cv, error_score='raise', n_jobs=1))
             model.fit(x_train_scaled, y_train)
             y_pred = model.predict(x_test_scaled)
             res_test[f'{descr_name}|{method_name}_RSCV'] = y_pred
-
             res_test.to_csv(os.path.join(res_folder, f'{bench_name}_test.csv'), index=False)
+
+            y_pred = cross_val_predict(model_empty(**model.best_params_), x_train_scaled, y_train, cv=cv, n_jobs=1)   # check and remove one of lines
+            y_pred = cross_val_predict(partial(model_empty, **model.best_params_), x_train_scaled, y_train, cv=cv, n_jobs=1)
+            y_pred = cross_val_predict(model, x_train_scaled, y_train, cv=cv, n_jobs=1)
+            # to csv
+
+    res_train_default.to_csv(os.path.join(res_folder, f'{bench_name}_default_traincv.csv'), index=False)
 
 
 def prepare(benchmark_collection):
@@ -139,7 +154,7 @@ descr_dict = {
     #long
     'desc2D': MoleculeTransformer(featurizer='desc2D', dtype=float),
     'pharm2D-cats': MoleculeTransformer(featurizer=Pharmacophore2D(factory='cats'), dtype=float),
-    'pharm2D-gobbi': MoleculeTransformer(featurizer=Pharmacophore2D(factory='gobbi'), dtype=float),
+#    'pharm2D-gobbi': MoleculeTransformer(featurizer=Pharmacophore2D(factory='gobbi'), dtype=float),
     'pharm2D-pmapper': MoleculeTransformer(featurizer=Pharmacophore2D(factory='pmapper'), dtype=float),
     
     # Need additional dependencies
