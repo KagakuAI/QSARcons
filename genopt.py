@@ -49,6 +49,7 @@ def uniform_mutation(individual, space, prob=0):
 
 
 def tournament_selection(pop):
+
     selected_inds = []
     for i in range(len(pop)):
         p1 = random.randint(0, len(pop) - 1)
