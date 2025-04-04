@@ -174,7 +174,7 @@ hyper_parameters = {
     'PLSRegression': {
         'n_components': randint(1, 11),
         'scale': [True, False],
-        'max_iter': [500, 1000, 2000],
+#        'max_iter': [500, 1000, 2000],
         'tol': loguniform(1e-6, 1e-3)
     },
     'RidgeRegression': {
@@ -190,16 +190,17 @@ hyper_parameters = {
     },
     'RandomForestRegressor': {
         'n_estimators': randint(50, 500),
-        'max_depth': [None, 10, 20, 30, 50],
-        'max_features': ['sqrt', 'log2', 0.3, 0.5, 0.7],
+        'max_depth': [None, 10, 25, 50],
+        'max_features': ['sqrt', 'log2', 0.3, 0.5],
         'min_samples_split': [2, 5, 10],
         'min_samples_leaf': [1, 2, 4],
-        'bootstrap': [True, False]
+        'bootstrap': [True]
     },
     'MLPRegressor': {
         'hidden_layer_sizes': [(50,), (100,), (50,50), (100,50)],
         'activation': ['relu', 'tanh', 'logistic'],
-        'solver': ['adam', 'sgd', 'lbfgs'],
+#        'solver': ['adam', 'sgd', 'lbfgs'],
+        'solver': ['sgd'],
         'alpha': loguniform(1e-5, 1e-1),
         'learning_rate': ['constant', 'invscaling', 'adaptive'],
         'max_iter': [2000, 5000]
@@ -209,13 +210,13 @@ hyper_parameters = {
         'epsilon': uniform(0.01, 0.3),
         'kernel': ['rbf', 'linear', 'poly'],
         'gamma': loguniform(1e-5, 1),
-        'degree': [2, 3]
+#        'degree': [2, 3]
     },
     'KNeighborsRegressor': {
         'n_neighbors': randint(1, 50),
         'weights': ['uniform', 'distance'],
-        'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
-        'p': [1, 2],
+#        'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
+#        'p': [1, 2],
         'metric': ['minkowski', 'euclidean', 'manhattan']
     }
 }
