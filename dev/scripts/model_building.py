@@ -4,6 +4,7 @@ import copy
 import numpy as np
 import pandas as pd
 import scipy
+import traceback
 from xgboost import XGBRegressor
 
 from scipy.stats import loguniform, uniform, randint
@@ -76,7 +77,8 @@ def process(benchmark_collection, coll_folder, bench_name, prediction_collection
         try:
             x_train = descr_func([i[0] for i in data_train])
             x_test = descr_func([i[0] for i in data_test])
-        except:
+        except Exception as e:
+            print(traceback.format_exc())
             continue
         
         y_train = [i[1] for i in data_train]
