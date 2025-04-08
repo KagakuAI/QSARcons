@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from sklearn.model_selection import train_test_split
 
-from genopt import GeneticAlgorithm
+from .genopt import GeneticAlgorithm
 
 
 def calc_accuracy(y_true, y_pred, metric='mae'):
