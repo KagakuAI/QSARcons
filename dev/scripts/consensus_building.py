@@ -1,21 +1,16 @@
 import os
 import random
-import numpy as np
 import pandas as pd
 from pathlib import Path
-from copy import deepcopy
-from tqdm import tqdm
 import shutil
 
-from consensus import RandomSearchRegressor, SystematicSearchRegressor, GeneticSearchRegressor, HyperoptSearchRegressor
+from qsarcons.consensus import RandomSearchRegressor, SystematicSearchRegressor, GeneticSearchRegressor
 
-from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.ensemble import StackingRegressor
-from sklearn.model_selection import RepeatedKFold
 from sklearn.linear_model import Ridge
 
 from multiprocessing import Pool, cpu_count

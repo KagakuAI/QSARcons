@@ -11,14 +11,18 @@ Create and activate a new conda environment:
     conda install molfeat[all]
     conda install xgboost==2.1.4
 
-
-Optional dependencies for specific descriptors:
-    
     # map descriptors
     conda install tmap::tmap
     pip install git+https://github.com/reymond-group/map4@v1.0
 
-    # pretrained models
-    conda install transformers tokenizers selfies 
-    conda install -c conda-forge dgllife
-    pip install torch==2.1.0 torchdata==0.7.0 dgl==1.1.0 
+
+# 1. Installation
+# 2. Usage (1 and 2)
+# 3. Tutorials (2d cons vs 3d cons)
+# 4. Paper cite
+
+    
+    
+    
+
+
