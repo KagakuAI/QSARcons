@@ -1,4 +1,5 @@
-<h1>QSARcons – a tool for searching optimal consensus of QSAR models</h1>
+QSARcons – a tool for searching optimal consensus of QSAR models
+-----------------------------
 
 ``QSARcons`` is a package for finding the optimal consensus of QSAR models for molecular property prediction. 
 This solution is motivated by the fact, that there are many different chemical descriptors and machine-learning methods 
@@ -10,6 +11,8 @@ Installation
 -----------------------------
 
 ``QSARcons`` can be installed with conda:
+
+.. code-block:: bash
     
     # QSARcons
     conda create -n qsarcons python==3.9
