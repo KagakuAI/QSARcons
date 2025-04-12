@@ -1,9 +1,0 @@
-COCc1cccc(C2=CC3CCCCC3C3=C2OP(=O)(O)Oc2c(-c4cccc(COC)c4)cc4c(c23)CCCC4)c1,1.24
-O=P1(O)Oc2c(-c3c(C4CCCCC4)cc(C4CCCCC4)cc3C3CCCCC3)cc3ccccc3c2-c2c(c(-c3c(C4CCCCC4)cc(C4CCCCC4)cc3C3CCCCC3)cc3ccccc23)O1,3.14
-CC(C)c1cc(C(C)C)c(-c2cc3ccccc3c3c2OP(=O)(O)Oc2c(-c4c(C(C)C)cc(C(C)C)cc4C(C)C)cc4ccccc4c2-3)c(C(C)C)c1,2.31
-COc1ccc(-c2cc3ccccc3c3c2OP(=O)(O)Oc2c(-c4ccc(OC)cc4)cc4ccccc4c2-3)cc1,1.08
-CC(C)(C)c1ccc(-c2cc3ccccc3c3c2OP(=O)(O)Oc2c(-c4ccc(C(C)(C)C)cc4)cc4ccccc4c2-3)cc1,1.3
-C[Si](c1ccccc1)(c1ccccc1)c1cc2ccccc2c2c1OP(=O)(O)Oc1c([Si](C)(c3ccccc3)c3ccccc3)cc3ccccc3c1-2,0.94
-O=P1(O)Oc2c(-c3ccc(-c4cc(C(F)(F)F)cc(C(F)(F)F)c4)cc3)cc3ccccc3c2-c2c(c(-c3cccc(-c4cc(C(F)(F)F)cc(C(F)(F)F)c4)c3)cc3ccccc23)O1,1.24
-COc1ccc(Cc2cc3c(c4c2OP(=O)(O)Oc2c(Cc5ccc(OC)cc5)cc5c(c2-4)CCCC5)CCCC3)cc1,0.22
-Cc1cc(C)c(-c2cc(-c3cc4c(c5c3OP(=O)(O)Oc3c(-c6cc(-c7c(C)cc(C)cc7C)cc(-c7c(C)cc(C)cc7C)c6)cc6c(c3-5)CCCC6)CCCC4)cc(-c3c(C)cc(C)cc3C)c2)c(C)c1,1.3
