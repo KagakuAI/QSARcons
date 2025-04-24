@@ -1,10 +1,9 @@
+from __future__ import annotations
 import random
 from copy import deepcopy
 from random import randint
 from statistics import pstdev, pvariance
 from typing import Callable, List, Tuple, Union
-
-from qsarcons.genopt import GeneticAlgorithm, Individual, Population
 
 
 def init_individual(ind_space: range = None, ind_size: int = None) -> Individual:
