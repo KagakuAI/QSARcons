@@ -5,10 +5,7 @@ from pandas.core.indexes.base import Index
 from pandas.core.series import Series
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
-from qsarcons.genopt import Individual
-
-from .genopt import GeneticAlgorithm
-
+from .genopt import Individual, GeneticAlgorithm
 
 def calc_accuracy(y_true, y_pred, metric="mae"):
     if metric == "mae":
