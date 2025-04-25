@@ -50,23 +50,21 @@ def process(estimators, method_list, prediction_consensus, prediction_collection
     # build consensus
     for method_func, method_name in method_list:
 
-        # trainset
+        # find consensus training set
         cons = method_func.run(x_train_default, y_train)
         y_pred = x_train_default[cons].mean(axis=1)
         res_df_train_default[method_name] = y_pred
 
-        # trainset with hyperopt
+        # testset
+        y_pred = x_test_default[cons].mean(axis=1)
+        res_df_test_default[method_name] = y_pred
+
+        # find consensus training set hyperopt
         cons = method_func.run(x_train, y_train)
         y_pred = x_train[cons].mean(axis=1)
         res_df_train[method_name] = y_pred
 
-        # testset
-        cons = method_func.run(x_test_default, y_test)
-        y_pred = x_test_default[cons].mean(axis=1)
-        res_df_test_default[method_name] = y_pred
-
         # testset with hyperopt
-        cons = method_func.run(x_test, y_test)
         y_pred = x_test[cons].mean(axis=1)
         res_df_test[method_name] = y_pred
 
