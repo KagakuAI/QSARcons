@@ -75,10 +75,11 @@ class SystematicSearchRegressor:
 
 
 class GeneticSearchRegressor:
-    def __init__(self, cons_size: int = 10, n_iter: int = 200, mut_prob: float = 0.2, metric: str = "mae") -> None:
+    def __init__(self, cons_size: int = 10, n_iter: int = 200, pop_size: int = 50, mut_prob: float = 0.2, metric: str = "mae") -> None:
         super().__init__()
 
         self.cons_size = cons_size
+        self.pop_size = pop_size
         self.n_iter = n_iter
         self.metric = metric
         self.mut_prob = mut_prob
@@ -97,7 +98,7 @@ class GeneticSearchRegressor:
         elif self.metric in ["r2"]:
             task = "maximize"
         #
-        ga = GeneticAlgorithm(task=task, pop_size=50, crossover_prob=0.8, mutation_prob=self.mut_prob, elitism=True)
+        ga = GeneticAlgorithm(task=task, pop_size=self.pop_size, crossover_prob=0.8, mutation_prob=self.mut_prob, elitism=True)
         ga.set_fitness(objective)
         ga.initialize(space, ind_size=self.cons_size)
         ga.run(n_iter=200, verbose=False)
