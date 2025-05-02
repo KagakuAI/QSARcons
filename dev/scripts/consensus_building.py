@@ -101,11 +101,10 @@ random.seed(42)
 
 method_list = [
                (SystematicSearchRegressor(cons_size=1, metric='r2'), 'Best'),
-               (SystematicSearchRegressor(cons_size=10**3, metric='r2'), 'All'),
-               (RandomSearchRegressor(cons_size=2, n_iter=5, metric='r2'), 'Random'),
-               (SystematicSearchRegressor(cons_size=2, metric='r2'), 'Systematic'),
-               (GeneticSearchRegressor(cons_size=3, mut_prob=0.5, metric='r2'), 'Genetic'),
-               #(HyperoptSearchRegressor(cons_size=3, n_iter=200, metric='rmse'), 'Hyperopt')
+               (SystematicSearchRegressor(cons_size=10**5, metric='r2'), 'All'),
+               (RandomSearchRegressor(cons_size=10, n_iter=10000, metric='r2'), 'Random'),
+               (SystematicSearchRegressor(cons_size=10, metric='r2'), 'Systematic'),
+               (GeneticSearchRegressor(cons_size=10, mut_prob=0.5, metric='r2'), 'Genetic')
                ]
 
 estimators = [
