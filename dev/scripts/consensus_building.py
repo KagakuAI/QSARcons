@@ -100,7 +100,7 @@ random.seed(42)
 
 
 method_list = [
-               (SystematicSearchRegressor(cons_size=10, metric='r2'), 'Best'),
+               (SystematicSearchRegressor(cons_size=1, metric='r2'), 'Best'),
                (SystematicSearchRegressor(cons_size=10**3, metric='r2'), 'All'),
                (RandomSearchRegressor(cons_size=2, n_iter=5, metric='r2'), 'Random'),
                (SystematicSearchRegressor(cons_size=2, metric='r2'), 'Systematic'),
