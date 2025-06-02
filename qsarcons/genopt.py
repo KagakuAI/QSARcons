@@ -4,7 +4,6 @@ from random import randint
 from statistics import pstdev, pvariance
 from typing import Callable, List, Tuple, Union, Iterator
 
-
 class Individual:
 
     def __init__(self, container: List[int]) -> None:
@@ -166,7 +165,7 @@ class GeneticAlgorithm:
     def set_fitness(self, fitness_func: Callable) -> None:
         self.fitness = fitness_func
 
-    def initialize(self, ind_space: range, ind_size: int) -> None:
+    def initialize(self, ind_space: range, ind_size: int, ind_elite=None) -> None:
 
         # individual size and parameters
         self.ind_space = ind_space
@@ -176,6 +175,9 @@ class GeneticAlgorithm:
         self.population = init_population(
             task=self.task, pop_size=self.pop_size, ind_space=self.ind_space, ind_size=self.ind_size
         )
+
+        self.population[-1] = ind_elite
+
         self.population.evaluator = self.fitness
         self.population.scaler = self.scaler
 
@@ -299,8 +301,7 @@ def init_individual(ind_space: range = None, ind_size: int = None) -> Individual
 
 
 def init_population(
-    task: str = None, pop_size: int = None, ind_space: range = None, ind_size: int = None
-) -> Population:
+    task: str = None, pop_size: int = None, ind_space: range = None, ind_size: int = None) -> Population:
     """Initializes random population of size pop_size.
 
     :param task: The optimization type (minimize or maximize)
