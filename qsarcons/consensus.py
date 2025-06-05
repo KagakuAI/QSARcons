@@ -15,48 +15,47 @@ METRIC_MODES = {
     "mae": "minimize",
     "rmse": "minimize",
     "r2": "maximize",
-    "spearmanr": "maximize"
+    "rank": "maximize",
+    "top": "maximize",
 }
 
+def top_x_overlap_rate(y_true, y_pred, top_percent=0.1):
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
 
-def calc_accuracy(y_true: Union[Series, List[float]],
-                  y_pred: Union[Series, List[float]],
-                  metric: str = 'mae') -> float:
-    """
-    Calculate accuracy metric between predicted and true values.
+    n_top = int(len(y_true) * top_percent)
+    if n_top < 1:
+        raise ValueError("Top percent too small for dataset size.")
 
-    Args:
-        y_true: Ground truth values.
-        y_pred: Predicted values.
-        metric: Metric to use ('mae', 'r2', 'rmse', 'spearmanr').
+    top_true_idx = set(np.argsort(y_true)[-n_top:])  # highest experimental
+    top_pred_idx = set(np.argsort(y_pred)[-n_top:])  # highest predicted
 
-    Returns:
-        Calculated metric score.
-    """
-    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    overlap = len(top_true_idx & top_pred_idx)
+    return overlap / n_top
+
+
+def calc_accuracy(y_true, y_pred, metric='mae'):
+    y_true, y_pred = list(y_true), list(y_pred)
 
     if metric == 'mae':
-        return mean_absolute_error(y_true, y_pred)
+        acc = mean_absolute_error(y_true, y_pred)
     elif metric == 'r2':
-        return r2_score(y_true, y_pred)
+        acc = r2_score(y_true, y_pred)
     elif metric == 'rmse':
-        return root_mean_squared_error(y_true, y_pred)
-    elif metric == 'spearmanr':
-        return spearmanr(y_true, y_pred).correlation
-    else:
-        raise ValueError(f"Unsupported metric: {metric}")
+        acc = root_mean_squared_error(y_true, y_pred)
+    elif metric == 'rank':
+        acc, p_value = spearmanr(y_true, y_pred)
+        try:
+            acc = acc.item()
+        except:
+            pass
+    elif metric == 'top':
+        acc = top_x_overlap_rate(y_true, y_pred)
+
+    return acc
 
 
 class SearchRegressor:
-    """
-    Base class for search-based regressors supporting optional consensus size optimization.
-
-    Args:
-        cons_size: int for fixed size, or 'auto' for automatic selection.
-        cons_size_candidates: list of consensus sizes to try if cons_size='auto'.
-        metric: performance metric to optimize.
-    """
-
     def __init__(self,
                  cons_size: Union[int, str] = 10,
                  cons_size_candidates: Optional[List[int]] = None,
@@ -68,19 +67,39 @@ class SearchRegressor:
         else:
             self.cons_size_candidates = cons_size_candidates
 
-    def _run_with_cons_size(self, x: DataFrame, y: Series, cons_size: int) -> Index:
-        """
-        Override this method in subclasses to run search with a fixed cons_size.
-        """
-        raise NotImplementedError
+        self.n_filtered_models = None  # number of models after filtering
+
+    def _filter_models(self, x: DataFrame, y: Series) -> DataFrame:
+        mode = METRIC_MODES[self.metric]
+
+        if self.metric == "rank":
+            baseline_score = 0.0  # no correlation baseline
+        else:
+            baseline_pred = np.full_like(y, fill_value=y.mean(), dtype=np.float64)
+            baseline_score = calc_accuracy(y, baseline_pred, self.metric)
+
+        filtered_cols = []
+        for col in x.columns:
+            score = calc_accuracy(y, x[col], self.metric)
+            if mode == "maximize" and score > baseline_score:
+                filtered_cols.append(col)
+            elif mode == "minimize" and score < baseline_score:
+                filtered_cols.append(col)
+
+        filtered_df = x[filtered_cols]
+        self.n_filtered_models = filtered_df.shape[1]
+
+        if self.n_filtered_models == 0:
+            raise ValueError(
+                f"No models left after filtering worse than baseline (score={baseline_score:.4f})"
+            )
+        return filtered_df
 
     def run(self, x: DataFrame, y: Series) -> Index:
-        """
-        Run search with either fixed consensus size or automatic consensus size optimization.
-        """
+        x_filtered = self._filter_models(x, y)
+
         if isinstance(self.cons_size, int):
-            # Fixed cons_size
-            return self._run_with_cons_size(x, y, self.cons_size)
+            return self._run_with_cons_size(x_filtered, y, self.cons_size)
 
         elif self.cons_size == 'auto':
             best_cons = None
@@ -88,8 +107,8 @@ class SearchRegressor:
             mode = METRIC_MODES[self.metric]
 
             for size in self.cons_size_candidates:
-                candidate_cons = self._run_with_cons_size(x, y, size)
-                y_cons = x[candidate_cons].mean(axis=1)
+                candidate_cons = self._run_with_cons_size(x_filtered, y, size)
+                y_cons = x_filtered[candidate_cons].mean(axis=1)
                 score = calc_accuracy(y, y_cons, self.metric)
 
                 if best_score is None:
@@ -158,7 +177,7 @@ class GeneticSearchRegressor(SearchRegressor):
         ga = GeneticAlgorithm(
             task=task,
             pop_size=self.pop_size,
-            crossover_prob=0.8,
+            crossover_prob=0.95,
             mutation_prob=self.mut_prob,
             elitism=True
         )
@@ -171,6 +190,6 @@ class GeneticSearchRegressor(SearchRegressor):
         ga.initialize(space, ind_size=cons_size, ind_elite=elite_individual)
         ga.run(n_iter=self.n_iter, verbose=False)
 
-        best_cons = list(ga.best_individual())
+        best_cons = list(ga.get_global_best())
         return x.columns[best_cons]
 
