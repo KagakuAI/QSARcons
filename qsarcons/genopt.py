@@ -36,9 +36,6 @@ class Individual:
     def __repr__(self):
         return repr(self.container)
 
-    def update(self, other):
-        self.container.update(other)
-
 
 class Population:
 
@@ -152,15 +149,16 @@ class GeneticAlgorithm:
         # genetic operators
         self.selector = tournament_selection
         self.scaler = sigma_trunc_scaling
-        self.crossover = one_point_crossover
+        self.pair_crossover = one_point_crossover
         self.mutator = uniform_mutation
 
         self.elitism = elitism
         self.n_cpu = n_cpu
         self.current_generation = 0
+        self.best_individuals = []
 
     def __repr__(self):
-        pass
+        return f"<GeneticAlgorithm gen={self.current_generation} pop_size={self.pop_size}>"
 
     def set_fitness(self, fitness_func: Callable) -> None:
         self.fitness = fitness_func
@@ -176,7 +174,8 @@ class GeneticAlgorithm:
             task=self.task, pop_size=self.pop_size, ind_space=self.ind_space, ind_size=self.ind_size
         )
 
-        self.population[-1] = ind_elite
+        if ind_elite is not None:
+            self.population[-1] = ind_elite
 
         self.population.evaluator = self.fitness
         self.population.scaler = self.scaler
@@ -196,7 +195,7 @@ class GeneticAlgorithm:
 
     def crossover(self, mother, father):
         if flip_coin(self.crossover_prob):
-            sister, brother = self.crossover(mother, father)
+            sister, brother = self.pair_crossover(mother, father)
         else:
             sister, brother = deepcopy(mother), deepcopy(father)
         return sister, brother
@@ -204,6 +203,12 @@ class GeneticAlgorithm:
     def mutate(self, individual: Individual, space: range, prob: float) -> Individual:
         mutant = self.mutator(individual, space, prob=prob)
         return mutant
+
+    def get_global_best(self):
+        if self.task == "maximize":
+            return max(self.best_individuals, key=lambda x: x.score)
+        else:
+            return min(self.best_individuals, key=lambda x: x.score)
 
     def step(self) -> "GeneticAlgorithm":
 
@@ -217,7 +222,7 @@ class GeneticAlgorithm:
             mother = mating_pool.pop(randint(0, len(mating_pool) - 1))
             father = mating_pool.pop(randint(0, len(mating_pool) - 1))
 
-            sister, brother = self.crossover(mother, father)
+            sister, brother = self.pair_crossover(mother, father)
 
             sister_mutated = self.mutate(sister, self.ind_space, prob=self.mutation_prob)
             brother_mutated = self.mutate(brother, self.ind_space, prob=self.mutation_prob)
@@ -242,6 +247,8 @@ class GeneticAlgorithm:
         new_population.evaluate()
         new_population.scale()
         new_population.sort()
+        best_current = new_population.best_score()
+        self.best_individuals.append(deepcopy(best_current))
 
         if self.elitism:
             if self.task == "maximize":
@@ -283,7 +290,7 @@ class GeneticAlgorithm:
 
     def print_stats(self):
         stats = self.get_statistics()
-        print("{Iter:^5}|{rawMax:^13.5f}|{rawAvg:^13.5f}|{rawMin:^13.5f}".format(**stats))
+        print("{Iter:^5}|{max_score:^13.5f}|{mean_score:^13.5f}|{min_score:^13.5f}".format(**stats))
 
 
 def init_individual(ind_space: range = None, ind_size: int = None) -> Individual:
@@ -359,17 +366,17 @@ def uniform_mutation(individual: Individual, ind_space: range, prob: float = 0) 
     :param prob: The probability of mutation
     :return: The mutated individual
     """
-
+    mutant = deepcopy(individual)
     for _ in range(100):
-        for n, gen in enumerate(individual):
+        for n, gen in enumerate(mutant):
             if random.random() < prob:
-                individual[n] = random.choice(ind_space)
+                mutant[n] = random.choice(ind_space)
 
         # prevent repeating enes
-        if len(set(individual.container)) == len(individual.container):
-            return individual
+        if len(set(mutant.container)) == len(mutant.container):
+            return mutant
 
-    return individual
+    return mutant
 
 
 def tournament_selection(population: Population) -> List[int]:
@@ -384,17 +391,15 @@ def tournament_selection(population: Population) -> List[int]:
     :return: The indexes of the selected individuals
     """
 
-    selected_individuals = []
-    for i in range(len(population)):
-        ind_1 = random.randint(0, len(population) - 1)
-        ind_2 = random.randint(0, len(population) - 1)
-
+    selected = []
+    for _ in range(len(population)):
+        competitors = random.sample(range(len(population)), 2)
         if population.task == "maximize":
-            selected_individuals.append(max(ind_1, ind_2, key=lambda x: population[x].score))
+            winner = max(competitors, key=lambda i: population[i].score)
         else:
-            selected_individuals.append(min(ind_1, ind_2, key=lambda x: population[x].score))
-
-    return selected_individuals
+            winner = min(competitors, key=lambda i: population[i].score)
+        selected.append(winner)
+    return selected
 
 
 def sigma_trunc_scaling(population: Population, c: int = 2) -> None:
