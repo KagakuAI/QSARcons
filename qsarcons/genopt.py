@@ -43,7 +43,6 @@ class Population:
         self.container = []
         self.task = task
         self.evaluator = None
-        self.scaler = None
         self.stats = {}
 
     def __len__(self) -> int:
@@ -72,8 +71,6 @@ class Population:
             ind.score = self.evaluator(ind)
         return self
 
-    def scale(self) -> None:
-        self.scaler(self)
 
     def rank(self):
         for rank, ind in enumerate(reversed(self), 1):
@@ -136,7 +133,6 @@ class GeneticAlgorithm:
         crossover_prob: float = 0.8,
         mutation_prob: float = 0.1,
         elitism: bool = True,
-        n_cpu: int = 1,
     ) -> None:
 
         random.seed(42)
@@ -148,12 +144,10 @@ class GeneticAlgorithm:
 
         # genetic operators
         self.selector = tournament_selection
-        self.scaler = sigma_trunc_scaling
         self.pair_crossover = one_point_crossover
         self.mutator = uniform_mutation
 
         self.elitism = elitism
-        self.n_cpu = n_cpu
         self.current_generation = 0
         self.best_individuals = []
 
@@ -178,10 +172,8 @@ class GeneticAlgorithm:
             self.population[-1] = ind_elite
 
         self.population.evaluator = self.fitness
-        self.population.scaler = self.scaler
 
         self.evaluate()
-        self.population.scale()
         self.population.sort()
         self.population.calc_stat()
         self.best_solution = self.best_individual()
@@ -194,7 +186,8 @@ class GeneticAlgorithm:
         return [self.population[i] for i in self.selector(self.population)]
 
     def crossover(self, mother, father):
-        if flip_coin(self.crossover_prob):
+
+        if random.random() <= self.crossover_prob:
             sister, brother = self.pair_crossover(mother, father)
         else:
             sister, brother = deepcopy(mother), deepcopy(father)
@@ -245,10 +238,8 @@ class GeneticAlgorithm:
             new_population.append(mating_pool.pop())
 
         new_population.evaluate()
-        new_population.scale()
         new_population.sort()
-        best_current = new_population.best_score()
-        self.best_individuals.append(deepcopy(best_current))
+        self.best_individuals.append(deepcopy(new_population.best_score()))
 
         if self.elitism:
             if self.task == "maximize":
@@ -268,39 +259,19 @@ class GeneticAlgorithm:
         return self
 
     def run(self, n_iter: int = 50, verbose: bool = False) -> None:
-
-        if verbose:
-            header = ["Iter", "MaxScore", "MeanScore", "MinScore"]
-            print("{:^5}|{:^13}|{:^13}|{:^13}".format(*header))
-            print("-" * 47)
-            for i in range(n_iter):
-                self.step()
-                self.print_stats()
-        else:
-            for i in range(n_iter):
-                self.step()
+        for i in range(n_iter):
+            self.step()
 
     def best_individual(self) -> Individual:
         return self.population.best_score()
-
-    def get_statistics(self):
-        self.population.calc_stat()
-        self.population.stats["Iter"] = self.current_generation
-        return self.population.stats
-
-    def print_stats(self):
-        stats = self.get_statistics()
-        print("{Iter:^5}|{max_score:^13.5f}|{mean_score:^13.5f}|{min_score:^13.5f}".format(**stats))
 
 
 def init_individual(ind_space: range = None, ind_size: int = None) -> Individual:
     """Initializes random individual with size ind_size sampling from ind_space
     (optimized parameters)
 
-    :param ind_space: The space where optimized parameters (genes) are
-        defined
-    :param ind_size: The size/length of the individual (the number of
-        optimized parameters)
+    :param ind_space: The space where optimized parameters (genes) are defined
+    :param ind_size: The size/length of the individual (the number of optimized parameters)
     :return: The Individual object
     """
     ind = Individual(random.sample(ind_space, k=ind_size))
@@ -400,44 +371,6 @@ def tournament_selection(population: Population) -> List[int]:
             winner = min(competitors, key=lambda i: population[i].score)
         selected.append(winner)
     return selected
-
-
-def sigma_trunc_scaling(population: Population, c: int = 2) -> None:
-    """Scales the original fitness function values for individuals. It helps
-    with cases where the fitness function values can be significantly different
-    for individuals. Scaled fitness values are more uniformly distributed,
-    which gives higher chances to be selected even for low-scored individuals.
-
-    :param population: The current population
-    :param c: Controls the degree of scaling
-    :return: The current population with scaled fitness values
-    """
-
-    population.calc_stat()
-
-    mean_score = population.stats["mean_score"]
-    dev_score = population.stats["dev_score"]
-    for i in range(len(population)):
-
-        f = population[i].score - mean_score
-        f += c * dev_score
-
-        if f < 0:
-            f = 0.0
-
-        population[i].fitness = f
-
-    population.calc_stat()
-
-
-def flip_coin(p):
-
-    if p == 1.0:
-        return True
-    if p == 0.0:
-        return False
-
-    return True if random.random() <= p else False
 
 
 def key_raw_score(individual: Individual) -> float:
