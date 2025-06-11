@@ -1,5 +1,5 @@
 import random
-from typing import List, Union, Optional, Callable
+from typing import List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -7,9 +7,8 @@ from pandas import DataFrame, Series, Index
 
 from sklearn.metrics import (
     mean_absolute_error, r2_score, root_mean_squared_error,
-    accuracy_score, f1_score
+    accuracy_score, f1_score, precision_score, recall_score, balanced_accuracy_score, roc_auc_score,
 )
-from sklearn.metrics import precision_score, recall_score, balanced_accuracy_score
 
 from scipy.stats import spearmanr
 
@@ -24,7 +23,7 @@ METRIC_MODES = {
     "top": "maximize",
     "acc": "maximize",
     "f1": "maximize",
-    "auto": "maximize",  # <- Add this
+    "auto": "maximize",
 }
 
 def top_x_overlap_rate(y_true, y_pred, top_percent=0.1):
@@ -40,7 +39,7 @@ def top_x_overlap_rate(y_true, y_pred, top_percent=0.1):
 
 def calc_accuracy(y_true, y_pred, metric='mae'):
     y_true, y_pred = list(y_true), list(y_pred)
-    
+
     if metric == 'mae':
         return mean_absolute_error(y_true, y_pred)
     elif metric == 'r2':
@@ -58,39 +57,52 @@ def calc_accuracy(y_true, y_pred, metric='mae'):
         return f1_score(y_true, y_pred, average='weighted')
     elif metric == 'auto':
         if all(isinstance(v, (int, float)) for v in y_true):
-            # Regression combined metric
             mae = mean_absolute_error(y_true, y_pred)
             rmse = root_mean_squared_error(y_true, y_pred)
             r2_val = r2_score(y_true, y_pred)
-            if np.all(np.array(y_pred) == y_pred[0]) or np.all(np.array(y_true) == y_true[0]):
-                rank = 0.0
-            else:
-                rank, _ = spearmanr(y_true, y_pred)
-                rank = rank.item() if hasattr(rank, 'item') else rank
+            # calc norm metrics
             mae_score = 1 / (1 + mae)
             rmse_score = 1 / (1 + rmse)
             r2_score_norm = max(0.0, r2_val)
-            rank_score = max(0.0, rank)
-            return np.mean([mae_score, rmse_score, r2_score_norm, rank_score])
+            return np.mean([mae_score, rmse_score, r2_score_norm])
         else:
-            # Classification combined metric
             acc = accuracy_score(y_true, y_pred)
             bal_acc = balanced_accuracy_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred, average='weighted')
             precision = precision_score(y_true, y_pred, average='weighted', zero_division=0)
             recall = recall_score(y_true, y_pred, average='weighted', zero_division=0)
-            return np.mean([acc, bal_acc, f1, precision, recall])
+            roc_auc = roc_auc_score(y_true, y_pred)
+            return np.mean([acc, bal_acc, f1, precision, recall, roc_auc])
 
 
 class ConsensusSearch:
-    def __init__(self, cons_size: Union[int, str] = 10, cons_size_candidates: Optional[List[int]] = None, metric: str = "mae"):
+    def __init__(self, cons_size: Union[int, str] = 9, cons_size_candidates: Optional[List[int]] = None, metric: str = "mae"):
         self.cons_size = cons_size
         self.metric = metric
         self.cons_size_candidates = cons_size_candidates or [3, 5, 7, 9, 11, 13, 15]
         self.n_filtered_models = None
 
-    def _filter_models(self, x: DataFrame, y: Series) -> DataFrame:
+    def _default_metric(self) -> str:
+        return self.metric
+
+    def _get_baseline_prediction(self, y: Series) -> Series:
         raise NotImplementedError
+
+    def _filter_models(self, x: DataFrame, y: Series, metric: Optional[str] = None) -> DataFrame:
+        metric = metric or self._default_metric()
+        mode = METRIC_MODES[metric]
+        baseline_pred = self._get_baseline_prediction(y)
+        baseline_score = calc_accuracy(y, baseline_pred, metric=metric)
+
+        filtered_cols = [col for col in x.columns if
+                         (mode == 'maximize' and calc_accuracy(y, x[col], metric=metric) > baseline_score) or
+                         (mode == 'minimize' and calc_accuracy(y, x[col], metric=metric) < baseline_score)]
+
+        filtered = x[filtered_cols]
+        self.n_filtered_models = filtered.shape[1]
+        if self.n_filtered_models == 0:
+            raise ValueError("No models left after filtering.")
+        return filtered
 
     def _consensus_predict(self, x_subset: DataFrame) -> Series:
         raise NotImplementedError
@@ -118,41 +130,16 @@ class ConsensusSearch:
 
 
 class ConsensusSearchRegressor(ConsensusSearch):
-    def _filter_models(self, x: DataFrame, y: Series, metric: str = "r2") -> DataFrame:
-
-        mode = METRIC_MODES[metric]
-        
-        baseline_pred = np.full_like(y, fill_value=y.mean(), dtype=np.float64)
-        baseline_score = calc_accuracy(y, baseline_pred, metric=metric)
-        
-        filtered_cols = [col for col in x.columns if
-                         (mode == 'maximize' and calc_accuracy(y, x[col], metric=metric) > baseline_score) or
-                         (mode == 'minimize' and calc_accuracy(y, x[col], metric=metric) < baseline_score)]
-        
-        filtered = x[filtered_cols]
-        self.n_filtered_models = filtered.shape[1]
-        
-        if self.n_filtered_models == 0:
-            raise ValueError("No models left after filtering.")
-        return filtered
+    def _get_baseline_prediction(self, y: Series) -> Series:
+        return pd.Series(np.full_like(y, fill_value=y.mean(), dtype=np.float64), index=y.index)
 
     def _consensus_predict(self, x_subset: DataFrame) -> Series:
         return x_subset.mean(axis=1)
 
 
 class ConsensusSearchClassifier(ConsensusSearch):
-    def _filter_models(self, x: DataFrame, y: Series) -> DataFrame:
-        mode = METRIC_MODES[self.metric]
-        baseline_pred = pd.Series([y.mode()[0]] * len(y), index=y.index)
-        baseline_score = calc_accuracy(y, baseline_pred, self.metric)
-        filtered_cols = [col for col in x.columns if
-                         (mode == 'maximize' and calc_accuracy(y, x[col], self.metric) > baseline_score) or
-                         (mode == 'minimize' and calc_accuracy(y, x[col], self.metric) < baseline_score)]
-        filtered = x[filtered_cols]
-        self.n_filtered_models = filtered.shape[1]
-        if self.n_filtered_models == 0:
-            raise ValueError("No models left after filtering.")
-        return filtered
+    def _get_baseline_prediction(self, y: Series) -> Series:
+        return pd.Series([y.mode()[0]] * len(y), index=y.index)
 
     def _majority_vote(self, preds: pd.DataFrame) -> pd.Series:
         arr = preds.to_numpy()
@@ -167,6 +154,18 @@ class ConsensusSearchClassifier(ConsensusSearch):
     def _consensus_predict(self, x_subset: DataFrame) -> Series:
         return self._majority_vote(x_subset)
 
+class DefaultConsensusRegressor(ConsensusSearchRegressor):
+    def __init__(self, model_names: List[str]):
+        super().__init__(cons_size=len(model_names))
+        self.model_names = model_names
+
+    def run(self, x: DataFrame, y: Series) -> Index:
+        x_filtered = self._filter_models(x, y, metric="r2")
+        available = set(x_filtered.columns)
+        selected = [col for col in self.model_names if col in available]
+        if not selected:
+            raise ValueError("None of the specified model names passed the filtering step.")
+        return pd.Index(selected)
 
 class RandomSearchRegressor(ConsensusSearchRegressor):
     def __init__(self, cons_size=10, n_iter=5000, metric="mae", cons_size_candidates=None):
@@ -182,6 +181,20 @@ class RandomSearchRegressor(ConsensusSearchRegressor):
             results.append((cols, score))
         results.sort(key=lambda tup: tup[1], reverse=METRIC_MODES[self.metric] == 'maximize')
         return pd.Index(results[0][0])
+
+
+class DefaultConsensusClassifier(ConsensusSearchClassifier):
+    def __init__(self, model_names: List[str]):
+        super().__init__(cons_size=len(model_names))
+        self.model_names = model_names
+
+    def run(self, x: DataFrame, y: Series) -> Index:
+        x_filtered = self._filter_models(x, y, metric="acc")
+        available = set(x_filtered.columns)
+        selected = [col for col in self.model_names if col in available]
+        if not selected:
+            raise ValueError("None of the specified model names passed the filtering step.")
+        return pd.Index(selected)
 
 
 class RandomSearchClassifier(ConsensusSearchClassifier):
