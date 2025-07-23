@@ -16,6 +16,7 @@ setup(
         "torch",
         "torchvision",
         "torch_optimizer",
+        "xgboost",
         "rdkit",
         "molfeat",
         "tqdm"
