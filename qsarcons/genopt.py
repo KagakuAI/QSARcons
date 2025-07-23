@@ -133,14 +133,14 @@ class GeneticAlgorithm:
         crossover_prob: float = 0.8,
         mutation_prob: float = 0.1,
         elitism: bool = True,
+        random_seed=42,
     ) -> None:
-
-        random.seed(42)
 
         self.task = task
         self.pop_size = pop_size
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
+        self.random_seed = random_seed
 
         # genetic operators
         self.selector = tournament_selection
@@ -151,13 +151,15 @@ class GeneticAlgorithm:
         self.current_generation = 0
         self.best_individuals = []
 
+        random.seed(self.random_seed)
+
     def __repr__(self):
         return f"<GeneticAlgorithm gen={self.current_generation} pop_size={self.pop_size}>"
 
     def set_fitness(self, fitness_func: Callable) -> None:
         self.fitness = fitness_func
 
-    def initialize(self, ind_space: range, ind_size: int, ind_elite=None) -> None:
+    def initialize(self, ind_space: range, ind_size: int) -> None:
 
         # individual size and parameters
         self.ind_space = ind_space
@@ -167,9 +169,6 @@ class GeneticAlgorithm:
         self.population = init_population(
             task=self.task, pop_size=self.pop_size, ind_space=self.ind_space, ind_size=self.ind_size
         )
-
-        if ind_elite is not None:
-            self.population[-1] = ind_elite
 
         self.population.evaluator = self.fitness
 

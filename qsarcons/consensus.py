@@ -79,7 +79,7 @@ class ConsensusSearch:
     def __init__(self, cons_size: Union[int, str] = 9, cons_size_candidates: Optional[List[int]] = None, metric: str = "mae"):
         self.cons_size = cons_size
         self.metric = metric
-        self.cons_size_candidates = cons_size_candidates or [3, 5, 7, 9, 11, 13, 15]
+        self.cons_size_candidates = cons_size_candidates or [3, 5, 7, 9, 11, 13, 15, 17, 20, 25]
         self.n_filtered_models = None
 
     def _default_metric(self) -> str:
@@ -88,8 +88,12 @@ class ConsensusSearch:
     def _get_baseline_prediction(self, y: Series) -> Series:
         raise NotImplementedError
 
-    def _filter_models(self, x: DataFrame, y: Series, metric: Optional[str] = None) -> DataFrame:
-        metric = metric or self._default_metric()
+    def _consensus_predict(self, x_subset: DataFrame) -> Series:
+        raise NotImplementedError
+
+    def _filter_models(self, x: DataFrame, y: Series) -> DataFrame:
+        metric = "r2" if isinstance(self, ConsensusSearchRegressor) else "acc"
+
         mode = METRIC_MODES[metric]
         baseline_pred = self._get_baseline_prediction(y)
         baseline_score = calc_accuracy(y, baseline_pred, metric=metric)
@@ -101,16 +105,19 @@ class ConsensusSearch:
         filtered = x[filtered_cols]
         self.n_filtered_models = filtered.shape[1]
         if self.n_filtered_models == 0:
-            raise ValueError("No models left after filtering.")
+            print("No models left after filtering. All models selected.")
+            return x
         return filtered
-
-    def _consensus_predict(self, x_subset: DataFrame) -> Series:
-        raise NotImplementedError
 
     def run(self, x: DataFrame, y: Series) -> Index:
         x_filtered = self._filter_models(x, y)
+        if len(x_filtered.columns) < max(self.cons_size_candidates):
+            print("WARNING: The number of filtered models is lower than the consensus size candidates. All models are used for consensus search.")
+            x_filtered = x
+
         if isinstance(self.cons_size, int):
             return self._run_with_cons_size(x_filtered, y, self.cons_size)
+
         elif self.cons_size == 'auto':
             best_cons = None
             best_score = None
@@ -160,11 +167,7 @@ class DefaultConsensusRegressor(ConsensusSearchRegressor):
         self.model_names = model_names
 
     def run(self, x: DataFrame, y: Series) -> Index:
-        x_filtered = self._filter_models(x, y, metric="r2")
-        available = set(x_filtered.columns)
-        selected = [col for col in self.model_names if col in available]
-        if not selected:
-            raise ValueError("None of the specified model names passed the filtering step.")
+        selected = self.model_names
         return pd.Index(selected)
 
 class RandomSearchRegressor(ConsensusSearchRegressor):
@@ -182,18 +185,13 @@ class RandomSearchRegressor(ConsensusSearchRegressor):
         results.sort(key=lambda tup: tup[1], reverse=METRIC_MODES[self.metric] == 'maximize')
         return pd.Index(results[0][0])
 
-
 class DefaultConsensusClassifier(ConsensusSearchClassifier):
     def __init__(self, model_names: List[str]):
         super().__init__(cons_size=len(model_names))
         self.model_names = model_names
 
     def run(self, x: DataFrame, y: Series) -> Index:
-        x_filtered = self._filter_models(x, y, metric="acc")
-        available = set(x_filtered.columns)
-        selected = [col for col in self.model_names if col in available]
-        if not selected:
-            raise ValueError("None of the specified model names passed the filtering step.")
+        selected =self.model_names
         return pd.Index(selected)
 
 
@@ -243,13 +241,11 @@ class GeneticSearchRegressor(ConsensusSearchRegressor):
 
         space = range(len(x.columns))
         task = METRIC_MODES[self.metric]
-        init_cols = SystematicSearchRegressor(cons_size, self.metric).run(x, y)
-        elite = Individual([x.columns.get_loc(col) for col in init_cols])
 
         ga = GeneticAlgorithm(task=task, pop_size=self.pop_size, crossover_prob=0.95,
-                              mutation_prob=self.mut_prob, elitism=True)
+                              mutation_prob=self.mut_prob, elitism=True, random_seed=11)
         ga.set_fitness(objective)
-        ga.initialize(space, ind_size=cons_size, ind_elite=elite)
+        ga.initialize(space, ind_size=cons_size)
         ga.run(n_iter=self.n_iter, verbose=False)
         return x.columns[list(ga.get_global_best())]
 
@@ -268,12 +264,10 @@ class GeneticSearchClassifier(ConsensusSearchClassifier):
 
         space = range(len(x.columns))
         task = METRIC_MODES[self.metric]
-        init_cols = SystematicSearchClassifier(cons_size, self.metric).run(x, y)
-        elite = Individual([x.columns.get_loc(col) for col in init_cols])
 
         ga = GeneticAlgorithm(task=task, pop_size=self.pop_size, crossover_prob=0.95,
-                              mutation_prob=self.mut_prob, elitism=True)
+                              mutation_prob=self.mut_prob, elitism=True, random_seed=11)
         ga.set_fitness(objective)
-        ga.initialize(space, ind_size=cons_size, ind_elite=elite)
+        ga.initialize(space, ind_size=cons_size)
         ga.run(n_iter=self.n_iter, verbose=False)
         return x.columns[list(ga.get_global_best())]
