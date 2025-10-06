@@ -247,21 +247,14 @@ class LazyML:
                 )
                 all_models.append(model)
 
-        total = len(all_models)
-        if self.verbose:
-            print(f"Total models to build: {total}")
-
         results = []
-        with tqdm(total=total, disable=not self.verbose) as pbar:
+        with tqdm(total=len(all_models), disable=not self.verbose) as pbar:
             for model in all_models:
                 model.run(df_train, df_val, df_test)
                 results.append(model.model_name)
                 pbar.update(1)
 
-        if self.verbose:
-            print("All models completed.")
-
-        return self
+        return None
 
 
 
