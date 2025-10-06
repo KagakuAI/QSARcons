@@ -16,35 +16,18 @@ Overview
 - Genetic consensus search
 
 Installation
------------------------------
+------------
 
-``QSARcons`` can be installed with conda:
+``QSARcons`` can be installed using conda/mamba package managers.
 
 .. code-block:: bash
-    
-    # QSARcons
-    conda create -n qsarcons python==3.9
-    conda activate qsarcons
 
+    pip install qsarcons
 
 Tutorial
 -----------------------------
 
-See an example in `tutorial <tutorials/QSARcons_tutorial.ipynb>`_ .
-
-Development
------------------------------
-
-``QSARcons`` is supposed to be used in two modes:
-
-**1. Consensus optimizer.** In this case, the QSAR models are built by the user and their predictions of the validation (optimization)
-set are submitted to ``QSARcons`` to find an optimal consensus. See the `tutorial <tutorials/QSARcons_tutorial.ipynb>`_ .
-
-**2. Consensus QSAR builder.** In this case, the QSAR models are built automatically within the QSARcons pipeline and then
-their best consensus is found. This is an end-to-end solution, where the user needs to submit only the training set.
-This model now is under development and we are looking for robust pipelines for building multiple QSAR models to be integrated
-into ``QSARcons``.
-
+See an example in `tutorial <notebooks/Notebook_1_LogS_pipeline.ipynb>`_ .
     
     
 
