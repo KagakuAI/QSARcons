@@ -31,9 +31,13 @@ from xgboost import XGBClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 
+from sklearn.utils.multiclass import type_of_target
+
 from sklearn.preprocessing import MinMaxScaler
 from molfeat.trans import MoleculeTransformer
 from molfeat.calc.pharmacophore import Pharmacophore2D
+
+from .hopt import StepwiseHopt, DEFAULT_PARAM_GRID_REGRESSORS, DEFAULT_PARAM_GRID_CLASSIFIERS
 
 from tqdm import tqdm
 
@@ -145,9 +149,10 @@ def replace_nan_with_column_mean(x):
 # ModelBuilder Class
 # ==========================================================
 class BasicBuilder:
-    def __init__(self, descriptor, estimator, model_name, model_folder):
+    def __init__(self, descriptor, estimator, hopt, model_name, model_folder):
         self.descriptor = descriptor
         self.estimator = estimator
+        self.hopt = hopt
         self.model_name = model_name
         self.model_folder = model_folder
 
@@ -159,73 +164,69 @@ class BasicBuilder:
         return smi, x, y
 
     def scale_descriptors(self, x_train, x_val, x_test):
+        """Scale molecular descriptors using MinMaxScaler."""
         scaler = MinMaxScaler()
         scaler.fit(x_train)
         return scaler.transform(x_train), scaler.transform(x_val), scaler.transform(x_test)
 
     def run(self, df_train, df_val, df_test):
+        """Full training + prediction pipeline with optional stepwise hyperopt."""
 
-        # 1. Calculate mol descriptors
+        # 1. Calculate descriptors
         smi_train, x_train, y_train = self.calc_descriptors(df_train)
         smi_val, x_val, y_val = self.calc_descriptors(df_val)
         smi_test, x_test, y_test = self.calc_descriptors(df_test)
 
         # 2. Scale descriptors
-        x_train_scaled, x_val_scaled, x_test_scaled = self.scale_descriptors(x_train, x_val, x_test)
+        x_train_scaled, x_val_scaled, x_test_scaled = self.scale_descriptors(
+            x_train, x_val, x_test
+        )
 
-        # 3. Train estimator
-        estimator = self.estimator()
-        estimator.fit(x_train_scaled, y_train)
+        # 3. Train estimator (optionally with stepwise hyperopt)
+        if self.hopt:
+            est_name = self.estimator.__name__
+            # Detect regression vs classification
+            task_type = type_of_target(y_train)
+            is_classification = task_type in ["binary", "multiclass"]
 
-        # 4. Make val/test predictions
+            # Choose appropriate parameter grid
+            if is_classification:
+                param_grid = DEFAULT_PARAM_GRID_CLASSIFIERS.get(est_name)
+                scoring = "accuracy"
+            else:
+                param_grid = DEFAULT_PARAM_GRID_REGRESSORS.get(est_name)
+                scoring = "r2"
+
+            if param_grid is None:
+                raise ValueError(f"No default parameter grid defined for {est_name}.")
+
+            # Perform stepwise optimization
+            opt = StepwiseHopt(self.estimator(), param_grid, scoring=scoring, cv=3, verbose=False)
+            opt.fit(x_train_scaled, y_train)
+            estimator = opt.estimator
+            estimator.fit(x_train_scaled, y_train)
+        else:
+            estimator = self.estimator()
+            estimator.fit(x_train_scaled, y_train)
+
+        # 4. Make validation/test predictions
         pred_val = list(estimator.predict(x_val_scaled))
         pred_test = list(estimator.predict(x_test_scaled))
 
         # 5. Save predictions
-        write_model_predictions(self.model_name, smi_val, y_val, pred_val,
-                                os.path.join(self.model_folder, "val.csv"))
-
-        write_model_predictions(self.model_name, smi_test, y_test, pred_test,
-                                os.path.join(self.model_folder, "test.csv"))
+        write_model_predictions(
+            self.model_name, smi_val, y_val, pred_val, os.path.join(self.model_folder, "val.csv")
+        )
+        write_model_predictions(
+            self.model_name, smi_test, y_test, pred_test, os.path.join(self.model_folder, "test.csv")
+        )
 
         return self
 
-from joblib import Parallel, delayed
-from tqdm import tqdm
-import os, shutil
-from joblib.parallel import BatchCompletionCallBack
-
-class TqdmParallel(Parallel):
-    """A Parallel subclass that updates tqdm progress bar in real time."""
-    def __init__(self, tqdm_bar, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.tqdm_bar = tqdm_bar
-
-    def print_progress(self):
-        # Disable joblib’s internal progress output
-        pass
-
-    def __call__(self, *args, **kwargs):
-        with self.tqdm_bar:
-            return super().__call__(*args, **kwargs)
-
-    def _print(self, msg, *args, **kwargs):
-        # Suppress joblib’s built-in printing
-        pass
-
-    def dispatch_one_batch(self, iterator):
-        batch = super().dispatch_one_batch(iterator)
-        if batch is not None:
-            old_callback = batch[1]
-            def new_callback(*args, **kwargs):
-                self.tqdm_bar.update(1)
-                return old_callback(*args, **kwargs)
-            batch = (batch[0], new_callback)
-        return batch
-
 class LazyML:
-    def __init__(self, task="regression", output_folder=None, verbose=True):
+    def __init__(self, task="regression", hopt=False, output_folder=None, verbose=True):
         self.task = task
+        self.hopt = hopt
         self.output_folder = output_folder
         self.verbose = verbose
 
@@ -242,6 +243,7 @@ class LazyML:
                 model = BasicBuilder(
                     descriptor=descriptor,
                     estimator=estimator,
+                    hopt=self.hopt,
                     model_name=model_name,
                     model_folder=self.output_folder,
                 )
