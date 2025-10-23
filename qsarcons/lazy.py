@@ -83,12 +83,12 @@ DESCRIPTORS = {
 REGRESSORS = {
     "RidgeRegression": Ridge,
     "PLSRegression": PLSRegression,
-    "KNeighborsRegressor": KNeighborsRegressor,
+    # "KNeighborsRegressor": KNeighborsRegressor,
     "DecisionTreeRegressor": DecisionTreeRegressor,
     "RandomForestRegressor": RandomForestRegressor,
     "XGBRegressor": XGBRegressor,
     "MLPRegressor": MLPRegressor,
-    "SVR": SVR,
+    # "SVR": SVR,
 }
 
 CLASSIFIERS = {
@@ -99,7 +99,7 @@ CLASSIFIERS = {
     "RandomForestClassifier": RandomForestClassifier,
     "XGBClassifier": XGBClassifier,
     "MLPClassifier": MLPClassifier,
-    "SVC": SVC,
+    # "SVC": SVC,
 }
 
 # ==========================================================
@@ -225,18 +225,30 @@ class BasicBuilder:
 
 class LazyML:
     def __init__(self, task="regression", hopt=False, output_folder=None, verbose=True):
+        """
+        task: "regression" or "classification"
+        hopt: whether to run stepwise hyperparameter optimization
+        output_folder: folder to save predictions
+        verbose: show progress bar
+        """
+        if task not in ["regression", "classification"]:
+            raise ValueError("task must be 'regression' or 'classification'")
         self.task = task
         self.hopt = hopt
         self.output_folder = output_folder
         self.verbose = verbose
 
-        if os.path.exists(self.output_folder):
+        if self.output_folder and os.path.exists(self.output_folder):
             shutil.rmtree(self.output_folder)
 
     def run(self, df_train, df_val, df_test):
         all_models = []
+
+        # Select model dictionary based on task
+        estimators_dict = REGRESSORS if self.task == "regression" else CLASSIFIERS
+
         for desc_name, descriptor in DESCRIPTORS.items():
-            for est_name, estimator in REGRESSORS.items():
+            for est_name, estimator in estimators_dict.items():
                 model_name = f"BasicML|{desc_name}|{est_name}"
                 os.makedirs(self.output_folder, exist_ok=True)
 
@@ -256,12 +268,4 @@ class LazyML:
                 results.append(model.model_name)
                 pbar.update(1)
 
-        return None
-
-
-
-
-
-
-
-
+        return results

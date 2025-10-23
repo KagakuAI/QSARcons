@@ -92,12 +92,47 @@ DEFAULT_PARAM_GRID_CLASSIFIERS = {
     },
 }
 
+
 def get_optimal_threads(n_jobs: int) -> int:
+    """
+    Determine the optimal number of threads for parallel execution.
+
+    Parameters
+    ----------
+    n_jobs : int
+        The desired number of concurrent jobs.
+
+    Returns
+    -------
+    int
+        The maximum number of threads that can be safely used given system CPUs.
+    """
     total_cpus = os.cpu_count() or 1
     return max(1, total_cpus // n_jobs)
 
+
 class StepwiseHopt:
-    """Stepwise hyperparameter optimizer for sklearn models."""
+    """
+    Stepwise hyperparameter optimization for scikit-learn estimators.
+
+    This optimizer iteratively tunes each hyperparameter one at a time
+    while keeping the other parameters fixed at their current best values.
+
+    Attributes
+    ----------
+    estimator : sklearn estimator
+        The scikit-learn model to optimize.
+    param_grid : dict
+        A dictionary mapping hyperparameter names to lists of candidate values.
+    scoring : str or callable, optional
+        The scoring function to evaluate model performance (default: None).
+    cv : int
+        Number of cross-validation folds (default: 3).
+    verbose : bool
+        If True, print progress messages during optimization.
+    best_params_ : dict
+        Dictionary storing the best hyperparameter values found.
+    """
 
     def __init__(self, estimator, param_grid, scoring=None, cv=3, verbose=True):
         self.estimator = estimator
@@ -108,17 +143,58 @@ class StepwiseHopt:
         self.best_params_ = {}
 
     def _evaluate_model(self, param, val, X, y, best_params, n_jobs):
+        """
+        Evaluate a model with a single hyperparameter value using cross-validation.
+
+        Parameters
+        ----------
+        param : str
+            Name of the hyperparameter to evaluate.
+        val : any
+            Value of the hyperparameter to test.
+        X : array-like
+            Feature matrix.
+        y : array-like
+            Target values.
+        best_params : dict
+            Current best hyperparameter values.
+        n_jobs : int
+            Number of parallel jobs to use.
+
+        Returns
+        -------
+        tuple
+            A tuple (val, mean_score) where mean_score is the average cross-validation score.
+        """
         threads = get_optimal_threads(n_jobs)
         est = clone(self.estimator)
         est.set_params(**{**best_params, param: val})
 
-        # Evaluate via CV
+        # Evaluate via cross-validation
         with parallel_backend("threading", n_jobs=threads):
             scores = cross_val_score(est, X, y, cv=self.cv, scoring=self.scoring)
         mean_score = np.mean(scores)
         return val, mean_score
 
     def fit(self, X, y):
+        """
+        Fit the stepwise hyperparameter optimizer on data.
+
+        Iterates over each hyperparameter, evaluates all candidate values
+        via cross-validation, and selects the best value before moving to the next
+        hyperparameter.
+
+        Parameters
+        ----------
+        X : array-like
+            Feature matrix.
+        y : array-like
+            Target values.
+
+        Returns
+        -------
+        self
+        """
         total_steps = sum(len(v) for v in self.param_grid.values())
         current_step = 0
         start_time = time.time()
