@@ -13,6 +13,7 @@ authors = [
 ]
 
 dependencies = [
+        "psutil",
         "rdkit",
         "molfeat",
         "scikit-learn",

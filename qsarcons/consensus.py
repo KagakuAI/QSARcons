@@ -104,7 +104,7 @@ class ConsensusSearch:
     def __init__(self, cons_size: Union[int, str] = 9, cons_size_candidates: Optional[List[int]] = None, metric: str = "mae"):
         self.cons_size = cons_size
         self.metric = metric
-        self.cons_size_candidates = cons_size_candidates or [3, 5, 7, 9, 11, 13, 15, 17, 20, 25]
+        self.cons_size_candidates = cons_size_candidates or [2, 3, 4, 5, 6, 7, 8, 9, 10]
         self.n_filtered_models = None
 
     def _default_metric(self) -> str:
@@ -115,7 +115,7 @@ class ConsensusSearch:
         """Generate baseline predictions for the given target values."""
         raise NotImplementedError
 
-    def _consensus_predict(self, x_subset: DataFrame) -> Series:
+    def _consensus_predict(self, x_subset: DataFrame) -> List:
         """Generate consensus predictions for the provided subset of models."""
         raise NotImplementedError
 
@@ -189,8 +189,8 @@ class ConsensusSearchRegressor(ConsensusSearch):
     def _get_baseline_prediction(self, y: Series) -> Series:
         return pd.Series(np.full_like(y, fill_value=y.mean(), dtype=np.float64), index=y.index)
 
-    def _consensus_predict(self, x_subset: DataFrame) -> Series:
-        return x_subset.mean(axis=1)
+    def _consensus_predict(self, x_subset: DataFrame) -> List:
+        return list(x_subset.mean(axis=1))
 
 class ConsensusSearchClassifier(ConsensusSearch):
     """Consensus search strategy for classification models.
@@ -218,8 +218,8 @@ class ConsensusSearchClassifier(ConsensusSearch):
         modes = classes[indices]
         return pd.Series(modes, index=preds.index)
 
-    def _consensus_predict(self, x_subset: DataFrame) -> Series:
-        return self._majority_vote(x_subset)
+    def _consensus_predict(self, x_subset: DataFrame) -> List:
+        return list(self._majority_vote(x_subset))
 
 class DefaultConsensusRegressor(ConsensusSearchRegressor):
     """Default regressor consensus using predefined model names.

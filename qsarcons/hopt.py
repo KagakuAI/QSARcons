@@ -58,7 +58,6 @@ DEFAULT_PARAM_GRID_CLASSIFIERS = {
     "LogisticRegression": {
         "C": [0.01, 0.1, 1.0, 10.0, 100.0],
         "solver": ["liblinear", "lbfgs", "saga"],
-        "penalty": ["l2", "l1"],
         "max_iter": [500, 2000],
     },
     "RandomForestClassifier": {
