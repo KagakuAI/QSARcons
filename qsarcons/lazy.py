@@ -26,7 +26,7 @@ from molfeat.trans import MoleculeTransformer
 from molfeat.calc.pharmacophore import Pharmacophore2D
 
 from .hopt import StepwiseHopt, DEFAULT_PARAM_GRID_REGRESSORS, DEFAULT_PARAM_GRID_CLASSIFIERS
-from qsarcons.logging import DisableLogger, HiddenPrints, OutputSuppressor
+from qsarcons.logging import OutputSuppressor
 
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')
