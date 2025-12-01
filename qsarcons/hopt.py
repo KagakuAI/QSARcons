@@ -1,10 +1,8 @@
 import time
-import os
 from concurrent.futures import ThreadPoolExecutor
-from sklearn.model_selection import cross_val_score
-from sklearn.base import clone
-from joblib import parallel_backend
-import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import get_scorer
+
 
 DEFAULT_PARAM_GRID_REGRESSORS = {
     "Ridge": {
@@ -13,15 +11,6 @@ DEFAULT_PARAM_GRID_REGRESSORS = {
     },
     "PLSRegression": {
         "n_components": [2, 4, 8, 16, 32],
-    },
-    "KNeighborsRegressor": {
-        "n_neighbors": [1, 3, 5, 9, 15, 25],
-        "weights": ["uniform", "distance"],
-        "p": [1, 2],
-    },
-    "DecisionTreeRegressor": {
-        "max_depth": [3, 5, 10, 20, None],
-        "min_samples_split": [2, 5, 10, 20],
     },
     "RandomForestRegressor": {
         "n_estimators": [50, 100, 200, 400],
@@ -34,16 +23,30 @@ DEFAULT_PARAM_GRID_REGRESSORS = {
         "learning_rate": [0.01, 0.05, 0.1, 0.3],
         "subsample": [0.6, 0.8, 1.0],
     },
+    "CatBoostRegressor": {
+        "iterations": [100, 300, 500],
+        "depth": [4, 6, 8, 10],
+        "learning_rate": [0.01, 0.05, 0.1],
+        "l2_leaf_reg": [1, 3, 5, 7],
+        "bagging_temperature": [0, 0.5, 1.0],
+        "border_count": [32, 64, 128],
+    },
     "MLPRegressor": {
-        "hidden_layer_sizes": [(100,), (200, 100), (200, 100, 50)],
         "activation": ["relu", "tanh"],
-        "alpha": [1e-5, 1e-4, 1e-3, 1e-2],
-        "learning_rate_init": [1e-4, 1e-3, 1e-2],
+        "learning_rate_init": [1e-4, 1e-3],
+        "hidden_layer_sizes": [(128,), (512, 256, 128), (2048, 1024, 512, 256, 128, 64)],
+        "max_iter": [300, 1000],
     },
     "SVR": {
         "C": [0.1, 1, 10, 100],
         "kernel": ["linear", "rbf", "poly"],
         "gamma": ["scale", "auto"],
+    },
+    "LinearSVR": {
+        "C": [0.01, 0.1, 1.0, 10.0, 100.0],
+        "epsilon": [0.001, 0.01, 0.1, 0.5],
+        "loss": ["epsilon_insensitive", "squared_epsilon_insensitive"],
+        "max_iter": [1000, 5000, 10000],
     },
 }
 
@@ -58,15 +61,6 @@ DEFAULT_PARAM_GRID_CLASSIFIERS = {
         "penalty": ["l2", "l1"],
         "max_iter": [500, 2000],
     },
-    "KNeighborsClassifier": {
-        "n_neighbors": [1, 3, 5, 9, 15, 25],
-        "weights": ["uniform", "distance"],
-        "p": [1, 2],
-    },
-    "DecisionTreeClassifier": {
-        "max_depth": [3, 5, 10, 20, None],
-        "min_samples_split": [2, 5, 10, 20],
-    },
     "RandomForestClassifier": {
         "n_estimators": [50, 100, 200, 400],
         "max_depth": [5, 10, 20, None],
@@ -78,37 +72,52 @@ DEFAULT_PARAM_GRID_CLASSIFIERS = {
         "learning_rate": [0.01, 0.05, 0.1, 0.3],
         "subsample": [0.6, 0.8, 1.0],
     },
-    "MLPClassifier": {
-        "hidden_layer_sizes": [(100,), (200, 100), (200, 100, 50)],
-        "activation": ["relu", "tanh"],
-        "alpha": [1e-5, 1e-4, 1e-3, 1e-2],
-        "learning_rate_init": [1e-4, 1e-3, 1e-2],
-        "max_iter": [200, 500],
+    "CatBoostClassifier": {
+        "iterations": [100, 300, 500],
+        "depth": [4, 6, 8, 10],
+        "learning_rate": [0.01, 0.05, 0.1],
+        "l2_leaf_reg": [1, 3, 5, 7],
+        "bagging_temperature": [0, 0.5, 1.0],
+        "border_count": [32, 64, 128],
     },
+    "MLPClassifier": {
+        "activation": ["relu", "tanh"],
+        "learning_rate_init": [1e-4, 1e-3],
+        "hidden_layer_sizes": [(128,), (512, 256, 128), (2048, 1024, 512, 256, 128, 64)],
+        "max_iter": [300, 1000],
+         },
     "SVC": {
         "C": [0.1, 1, 10, 100],
         "kernel": ["linear", "rbf", "poly"],
         "gamma": ["scale", "auto"],
     },
+    "LinearSVC": {
+        "C": [0.01, 0.1, 1.0, 10.0, 100.0],
+        "loss": ["hinge", "squared_hinge"],
+        "penalty": ["l2"],
+        "max_iter": [1000, 5000, 10000],
+    },
 }
 
-
-def get_optimal_threads(n_jobs: int) -> int:
+def single_split_score(est, x, y, scoring, test_size=0.2, random_state=42):
     """
-    Determine the optimal number of threads for parallel execution.
-
-    Parameters
-    ----------
-    n_jobs : int
-        The desired number of concurrent jobs.
-
-    Returns
-    -------
-    int
-        The maximum number of threads that can be safely used given system CPUs.
+    Performs a single train/val split inside the function,
+    fits the estimator, and returns the validation score.
     """
-    total_cpus = os.cpu_count() or 1
-    return max(1, total_cpus // n_jobs)
+
+    x_train, x_val, y_train, y_val = train_test_split(
+        x, y,
+        test_size=test_size,
+        random_state=random_state,
+    )
+
+    est.fit(x_train, y_train)
+    y_pred = est.predict(x_val)
+
+    scorer = get_scorer(scoring)
+    score = scorer._score_func(y_val, y_pred)
+
+    return score
 
 
 class StepwiseHopt:
@@ -117,85 +126,28 @@ class StepwiseHopt:
 
     This optimizer iteratively tunes each hyperparameter one at a time
     while keeping the other parameters fixed at their current best values.
-
-    Attributes
-    ----------
-    estimator : sklearn estimator
-        The scikit-learn model to optimize.
-    param_grid : dict
-        A dictionary mapping hyperparameter names to lists of candidate values.
-    scoring : str or callable, optional
-        The scoring function to evaluate model performance (default: None).
-    cv : int
-        Number of cross-validation folds (default: 3).
-    verbose : bool
-        If True, print progress messages during optimization.
-    best_params_ : dict
-        Dictionary storing the best hyperparameter values found.
     """
 
-    def __init__(self, estimator, param_grid, scoring=None, cv=3, verbose=True):
+    def __init__(self, estimator, param_grid, scoring=None, verbose=True):
         self.estimator = estimator
         self.param_grid = param_grid
         self.scoring = scoring
-        self.cv = cv
         self.verbose = verbose
         self.best_params_ = {}
 
-    def _evaluate_model(self, param, val, X, y, best_params, n_jobs):
-        """
-        Evaluate a model with a single hyperparameter value using cross-validation.
+    def _evaluate_model(self, param, val, x, y, best_params, n_jobs):
 
-        Parameters
-        ----------
-        param : str
-            Name of the hyperparameter to evaluate.
-        val : any
-            Value of the hyperparameter to test.
-        X : array-like
-            Feature matrix.
-        y : array-like
-            Target values.
-        best_params : dict
-            Current best hyperparameter values.
-        n_jobs : int
-            Number of parallel jobs to use.
+        params = {**best_params, param: val}
+        est = self.estimator.__class__(**params)
+        score = single_split_score(est, x, y, scoring=self.scoring)
+        return val, score
 
-        Returns
-        -------
-        tuple
-            A tuple (val, mean_score) where mean_score is the average cross-validation score.
-        """
-        threads = get_optimal_threads(n_jobs)
-        est = clone(self.estimator)
-        est.set_params(**{**best_params, param: val})
+    def fit(self, x, y):
 
-        # Evaluate via cross-validation
-        with parallel_backend("threading", n_jobs=threads):
-            scores = cross_val_score(est, X, y, cv=self.cv, scoring=self.scoring)
-        mean_score = np.mean(scores)
-        return val, mean_score
+        if self.verbose:
+            total_steps = sum(len(v) for v in self.param_grid.values())
+            print(f"Stepwise optimization started with {total_steps} options")
 
-    def fit(self, X, y):
-        """
-        Fit the stepwise hyperparameter optimizer on data.
-
-        Iterates over each hyperparameter, evaluates all candidate values
-        via cross-validation, and selects the best value before moving to the next
-        hyperparameter.
-
-        Parameters
-        ----------
-        X : array-like
-            Feature matrix.
-        y : array-like
-            Target values.
-
-        Returns
-        -------
-        self
-        """
-        total_steps = sum(len(v) for v in self.param_grid.values())
         current_step = 0
         start_time = time.time()
 
@@ -209,7 +161,7 @@ class StepwiseHopt:
                 print(f"\nOptimizing '{param}' ({len(options)} options)")
 
             n_jobs = len(options)
-            args = [(param, val, X, y, best_params, n_jobs) for val in options]
+            args = [(param, val, x, y, best_params, n_jobs) for val in options]
             with ThreadPoolExecutor(max_workers=n_jobs) as executor:
                 results = list(executor.map(lambda a: self._evaluate_model(*a), args))
 
@@ -225,7 +177,7 @@ class StepwiseHopt:
                 print(f"→ Best {param}: {best_val}, score={best_score:.4f}")
 
         self.best_params_ = best_params
-        self.estimator.set_params(**best_params)
+        self.estimator = self.estimator.__class__(**best_params)
         total_time_min = (time.time() - start_time) / 60
         if self.verbose:
             print(f"\nStepwise optimization completed in {total_time_min:.1f} min")

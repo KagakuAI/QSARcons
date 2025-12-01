@@ -15,10 +15,11 @@ authors = [
 dependencies = [
         "rdkit",
         "molfeat",
-        "xgboost",
         "scikit-learn",
-        "tqdm",
-        "huggingface_hub"
+        "xgboost",
+        "catboost",
+        "huggingface_hub",
+        "pytest"
 ]
 
 [tool.setuptools.packages.find]

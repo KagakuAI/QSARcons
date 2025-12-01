@@ -30,15 +30,12 @@ def top_x_overlap_rate(y_true, y_pred, top_percent=0.1):
     """Calculate the overlap rate between top-ranked true and predicted values.
 
     Args:
-        y_true (array-like): Ground truth target values.
-        y_pred (array-like): Predicted target values.
-        top_percent (float, optional): Fraction of top elements to consider for overlap. Defaults to 0.1.
+        y_true: Ground truth target values.
+        y_pred: Predicted target values.
+        top_percent: Fraction of top elements to consider for overlap. Defaults to 0.1.
 
     Returns:
         float: Fraction of overlapping indices between top-ranked true and predicted values.
-
-    Raises:
-        ValueError: If `top_percent` is too small for the dataset size.
     """
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
@@ -97,13 +94,12 @@ def calc_accuracy(y_true, y_pred, metric='mae'):
 
 class ConsensusSearch:
     """Base class for consensus model selection.
-
     Handles model filtering, consensus formation, and metric optimization across regression and classification tasks.
 
     Args:
-        cons_size (Union[int, str], optional): Number of models to include in consensus or 'auto' for automatic selection.
-        cons_size_candidates (List[int], optional): List of candidate consensus sizes for auto mode.
-        metric (str, optional): Evaluation metric to optimize.
+        cons_size: Number of models to include in consensus or 'auto' for automatic selection.
+        cons_size_candidates: List of candidate consensus sizes for auto mode.
+        metric: Evaluation metric to optimize.
     """
     def __init__(self, cons_size: Union[int, str] = 9, cons_size_candidates: Optional[List[int]] = None, metric: str = "mae"):
         self.cons_size = cons_size
@@ -150,7 +146,7 @@ class ConsensusSearch:
             return x
         return filtered
 
-    def run(self, x: DataFrame, y: Series) -> Index:
+    def run(self, x: DataFrame, y: Series) -> List:
         """Execute consensus model search.
 
         Args:
@@ -181,7 +177,7 @@ class ConsensusSearch:
                    (mode == 'minimize' and score < best_score):
                     best_score = score
                     best_cons = candidate
-            return best_cons
+            return list(best_cons)
         else:
             raise ValueError(f"Unsupported cons_size value: {self.cons_size}")
 
