@@ -26,8 +26,6 @@ QSARcons provides a two-layer workflow.
 Installation
 --------------------------------------------------------------------
 
-``QSARcons`` can be installed using conda/mamba package managers.
-
 .. code-block:: bash
 
     pip install qsarcons
@@ -36,6 +34,4 @@ Colab
 ---------------------------------------------------------------------
 
 See an example in `QSARcons pipeline <https://colab.research.google.com/github/KagakuAI/QSARcons/blob/main/colab/Notebook_1_QSARcons_pipeline.ipynb>`_
-
-
 
