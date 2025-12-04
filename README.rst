@@ -35,4 +35,4 @@ Installation
 Tutorial
 ---------------------------------------------------------------------
 
-See an example in `tutorial <notebooks/Notebook_1_LogS_pipeline.ipynb>`_.
+See an example in `tutorial <notebooks/Notebook_1_QSARcons_pipeline.ipynb>`_.
