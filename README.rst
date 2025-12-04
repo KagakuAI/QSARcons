@@ -1,19 +1,25 @@
-QSARcons – a tool for searching optimal consensus of QSAR models
+
+QSARcons - smart searching for consensus of QSAR models
 --------------------------------------------------------------------
 
-``QSARcons`` is a package for finding the optimal consensus of QSAR models.
-This project is motivated by the fact that there are many different chemical descriptors and machine learning methods
-which can be combined into multiple QSAR models. So, a smart selection of the optimal subset of QSAR models (consensus)
-can be reasonable for many applications.
+``QSARcons`` is a package designed to identify optimal consensus combinations of QSAR models. The project is built on
+the idea that the vast number of available chemical descriptors and machine-learning algorithms can produce a large
+variety of QSAR models. Selecting the most effective subset - and combining them into a consensus - can significantly
+improve the accuracy of the final consensus predictions.
 
 Overview
 --------------------------------------------------------------------
+``QSARcons`` has two main layers in the workflow.
 
-``QSARcons`` can be used for:
+1. Build multiple QSAR models (>100) using 2D chemical descriptors and traditional machine-learning algorithms.
+The individual modeling pipeline is intentionally kept simple, avoiding complex preprocessing steps. Optional stepwise
+hyperparameter optimization is available for all machine-learning methods.
 
-- Random consensus search
-- Systematic consensus search
-- Genetic consensus search
+2. Identify the optimal consensus of the generated QSAR models using multiple search strategies:
+
+- Random search
+- Systematic search
+- Genetic search
 
 Installation
 --------------------------------------------------------------------
@@ -28,7 +34,3 @@ Tutorial
 ---------------------------------------------------------------------
 
 See an example in `tutorial <notebooks/Notebook_1_LogS_pipeline.ipynb>`_ .
-    
-    
-
-
