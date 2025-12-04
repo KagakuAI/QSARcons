@@ -32,7 +32,10 @@ Installation
 
     pip install qsarcons
 
-Tutorial
+Colab
 ---------------------------------------------------------------------
 
-See an example in `tutorial <notebooks/Notebook_1_QSARcons_pipeline.ipynb>`_.
+See an example in `QSARcons pipeline <https://colab.research.google.com/github/KagakuAI/QSARcons/blob/main/colab/Notebook_1_QSARcons_pipeline.ipynb>`_
+
+
+
