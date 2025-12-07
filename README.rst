@@ -40,7 +40,7 @@ Input data are dataframes where the first column is molecule SMILES and the seco
 
     from qsarcons.cli import run_qsarcons
 
-    test_pred = run_qsarcons(df_train, df_val, df_test, task="regression", output_folder="qsarcons_results")
+    test_pred = run_qsarcons(df_train, df_val, df_test, task="regression", output_folder="results")
 
 Colab
 ---------------------------------------------------------------------
