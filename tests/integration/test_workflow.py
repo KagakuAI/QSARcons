@@ -5,14 +5,14 @@ from sklearn.metrics import r2_score, roc_auc_score
 # -----------------------------
 # Regression Test
 # -----------------------------
-def test_consensus_search(regression_folder, regression_consensus_searchers):
+def test_consensus_search(regression_folder, consensus_searchers):
     df_val = pd.read_csv(f"{regression_folder}/val.csv")
     df_test = pd.read_csv(f"{regression_folder}/test.csv")
 
     x_val, y_val = df_val.iloc[:, 2:], df_val.iloc[:, 1]
     x_test, y_test = df_test.iloc[:, 2:], df_test.iloc[:, 1]
 
-    for name, searcher in regression_consensus_searchers:
+    for name, searcher in consensus_searchers:
         best = searcher.run(x_val, y_val)
         pred_val = searcher.predict_cons(x_val[best])
         pred_test = searcher.predict_cons(x_test[best])
@@ -27,14 +27,14 @@ def test_consensus_search(regression_folder, regression_consensus_searchers):
 # -----------------------------
 # Classification Test
 # -----------------------------
-def test_classification_consensus(classification_folder, classification_consensus_searchers):
+def test_classification_consensus(classification_folder, consensus_searchers):
     df_val = pd.read_csv(f"{classification_folder}/val.csv")
     df_test = pd.read_csv(f"{classification_folder}/test.csv")
 
     x_val, y_val = df_val.iloc[:, 2:], df_val.iloc[:, 1]
     x_test, y_test = df_test.iloc[:, 2:], df_test.iloc[:, 1]
 
-    for name, searcher in classification_consensus_searchers:
+    for name, searcher in consensus_searchers:
         best = searcher.run(x_val, y_val)
         pred_val = searcher.predict_cons(x_val[best])
         pred_test = searcher.predict_cons(x_test[best])
