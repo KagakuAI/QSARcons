@@ -153,7 +153,7 @@ class GeneticSearch(ConsensusSearch):
 
         space = range(len(x.columns))
         task = METRIC_MODES[self.metric]
-        ga = GeneticAlgorithm(task=task, pop_size=self.pop_size, crossover_prob=0.95,
+        ga = GeneticAlgorithm(task=task, pop_size=self.pop_size, crossover_prob=0.90,
                               mutation_prob=self.mut_prob, elitism=True, random_seed=11)
         ga.set_fitness(objective)
         ga.initialize(space, ind_size=cons_size)

@@ -1,15 +1,9 @@
-import os
 import pytest
-import numpy as np
 import pandas as pd
-from sklearn.metrics import r2_score, balanced_accuracy_score
 from sklearn.model_selection import train_test_split
 
 from qsarcons.lazy import LazyML
-from qsarcons.consensus import (
-    RandomSearch, SystematicSearch, GeneticSearch,
-    RandomSearchClassifier, SystematicSearchClassifier, GeneticSearchClassifier
-)
+from qsarcons.consensus import RandomSearch, SystematicSearch, GeneticSearch
 
 # -----------------------------
 # Dataset loader
@@ -57,12 +51,8 @@ def classification_folder(classification_data):
     lazy.run(df_train, df_val, df_test)
     return out
 
-# -----------------------------
-# Consensus search fixtures return
-# consensus searchers (NOT results)
-# -----------------------------
 @pytest.fixture
-def regression_consensus_searchers():
+def consensus_searchers():
     metric = "auto"
     cons_size = "auto"
     return [
@@ -72,13 +62,3 @@ def regression_consensus_searchers():
         ("Genetic", GeneticSearch(cons_size=cons_size, n_iter=20, pop_size=20, mut_prob=0.2, metric=metric))
     ]
 
-@pytest.fixture
-def classification_consensus_searchers():
-    metric = "auto"
-    cons_size = "auto"
-    return [
-        ("Best", SystematicSearchClassifier(cons_size=1, metric=metric)),
-        ("Random", RandomSearchClassifier(cons_size=cons_size, n_iter=200, metric=metric)),
-        ("Systematic", SystematicSearchClassifier(cons_size=cons_size, metric=metric)),
-        ("Genetic", GeneticSearchClassifier(cons_size=cons_size, n_iter=20, pop_size=20, mut_prob=0.2, metric=metric))
-    ]

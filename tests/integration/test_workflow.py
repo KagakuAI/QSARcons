@@ -1,11 +1,11 @@
 import pytest
 import pandas as pd
-from sklearn.metrics import r2_score, balanced_accuracy_score
+from sklearn.metrics import r2_score, roc_auc_score
 
 # -----------------------------
 # Regression Test
 # -----------------------------
-def test_regression_consensus(regression_folder, regression_consensus_searchers):
+def test_consensus_search(regression_folder, regression_consensus_searchers):
     df_val = pd.read_csv(f"{regression_folder}/val.csv")
     df_test = pd.read_csv(f"{regression_folder}/test.csv")
 
@@ -23,7 +23,6 @@ def test_regression_consensus(regression_folder, regression_consensus_searchers)
 
         # optionally print R² for quick inspection
         print(f"[Regression] {name}: R2 val={r2_score(y_val, pred_val):.3f}, test={r2_score(y_test, pred_test):.3f}")
-
 
 # -----------------------------
 # Classification Test
@@ -47,4 +46,4 @@ def test_classification_consensus(classification_folder, classification_consensu
         assert set(pred_test).issubset(set(y_test.unique()))
 
         # optionally print balanced accuracy
-        print(f"[Classification] {name}: val={balanced_accuracy_score(y_val, pred_val):.3f}, test={balanced_accuracy_score(y_test, pred_test):.3f}")
+        print(f"[Classification] {name}: val={roc_auc_score(y_val, pred_val):.3f}, test={roc_auc_score(y_test, pred_test):.3f}")
