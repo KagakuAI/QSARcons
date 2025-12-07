@@ -79,7 +79,10 @@ class ConsensusSearch:
             return x
         return filtered
 
-    def run(self, x: DataFrame, y: List) -> List:
+    def _run_with_cons_size(self, x, y, cons_size):
+        return NotImplementedError
+
+    def run(self, x: DataFrame, y: List):
         """Execute consensus model search."""
 
         x_filtered = self._filter_models(x, y)
@@ -111,8 +114,8 @@ class ConsensusSearch:
 class RandomSearch(ConsensusSearch):
     """Randomized search for optimal regression consensus."""
 
-    def __init__(self, cons_size=10, n_iter=5000, metric="mae", cons_size_candidates=None):
-        super().__init__(cons_size, cons_size_candidates, metric)
+    def __init__(self, n_iter=1000, **kwargs):
+        super().__init__(**kwargs)
         self.n_iter = n_iter
 
     def _run_with_cons_size(self, x: DataFrame, y: Series, cons_size: int) -> Index:
@@ -129,8 +132,12 @@ class RandomSearch(ConsensusSearch):
 class SystematicSearch(ConsensusSearch):
     """Systematic selection of top-performing regression models."""
 
-    def _run_with_cons_size(self, x: DataFrame, y: Series, cons_size: int) :
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def _run_with_cons_size(self, x: DataFrame, y: Series, cons_size: int):
         """Run systematic search for regression models."""
+
         scores = [(col, calc_accuracy(y, x[col], self.metric)) for col in x.columns]
         scores.sort(key=lambda tup: tup[1], reverse=METRIC_MODES[self.metric] == 'maximize')
         top_cols = [col for col, _ in scores[:cons_size]]
@@ -138,14 +145,12 @@ class SystematicSearch(ConsensusSearch):
 
 class GeneticSearch(ConsensusSearch):
     """Genetic algorithm-based search for optimal regression consensus. """
-    def __init__(self, cons_size=10, n_iter=50, pop_size=50, mut_prob=0.2, metric="mae", cons_size_candidates=None):
-        super().__init__(cons_size, cons_size_candidates, metric)
-        self.pop_size = pop_size
-        self.n_iter = n_iter
-        self.mut_prob = mut_prob
 
-    def _run_with_cons_size(self, x: DataFrame, y: Series, cons_size: int) -> Index:
-        """Run genetic algorithm search for a fixed consensus size."""
+    def __init__(self, n_iter=50, **kwargs):
+        super().__init__(**kwargs)
+        self.n_iter = n_iter
+
+    def _run_with_cons_size(self, x, y, cons_size) -> Index:
 
         def objective(ind: Individual) -> float:
             y_pred = self.predict_cons(x.iloc[:, list(ind)])
@@ -153,9 +158,9 @@ class GeneticSearch(ConsensusSearch):
 
         space = range(len(x.columns))
         task = METRIC_MODES[self.metric]
-        ga = GeneticAlgorithm(task=task, pop_size=self.pop_size, crossover_prob=0.90,
-                              mutation_prob=self.mut_prob, elitism=True, random_seed=11)
+        ga = GeneticAlgorithm(task=task, pop_size=50, crossover_prob=0.90, mutation_prob=0.2, elitism=True)
         ga.set_fitness(objective)
         ga.initialize(space, ind_size=cons_size)
         ga.run(n_iter=self.n_iter)
+
         return x.columns[list(ga.get_global_best())]

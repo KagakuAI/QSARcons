@@ -178,9 +178,9 @@ class GeneticAlgorithm:
     def __init__(
         self,
         task: str = "minimize",
-        pop_size: int = 10,
-        crossover_prob: float = 0.8,
-        mutation_prob: float = 0.1,
+        pop_size: int = 50,
+        crossover_prob: float = 0.9,
+        mutation_prob: float = 0.2,
         elitism: bool = True,
         random_seed=42,
     ) -> None:
