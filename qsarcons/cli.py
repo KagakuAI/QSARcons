@@ -10,7 +10,7 @@ def run_qsarcons(df_train, df_val, df_test, task="regression", output_folder=Non
         df_test[1] = [0 for i in df_test.index]
 
     # 2. Build multiple models
-    lazy_ml = LazyML(task=task, hopt=False, output_folder=output_folder, verbose=True)
+    lazy_ml = LazyML(task=task, hopt=True, output_folder=output_folder, verbose=True)
     lazy_ml.run(df_train, df_val, df_test)
 
     # 3. Load model predictions
