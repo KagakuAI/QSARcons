@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 
 from qsarcons.lazy import LazyML
 from qsarcons.consensus import (
-    RandomSearchRegressor, SystematicSearchRegressor, GeneticSearchRegressor,
+    RandomSearch, SystematicSearch, GeneticSearch,
     RandomSearchClassifier, SystematicSearchClassifier, GeneticSearchClassifier
 )
 
@@ -66,10 +66,10 @@ def regression_consensus_searchers():
     metric = "auto"
     cons_size = "auto"
     return [
-        ("Best", SystematicSearchRegressor(cons_size=1, metric=metric)),
-        ("Random", RandomSearchRegressor(cons_size=cons_size, n_iter=200, metric=metric)),
-        ("Systematic", SystematicSearchRegressor(cons_size=cons_size, metric=metric)),
-        ("Genetic", GeneticSearchRegressor(cons_size=cons_size, n_iter=20, pop_size=20, mut_prob=0.2, metric=metric))
+        ("Best", SystematicSearch(cons_size=1, metric=metric)),
+        ("Random", RandomSearch(cons_size=cons_size, n_iter=200, metric=metric)),
+        ("Systematic", SystematicSearch(cons_size=cons_size, metric=metric)),
+        ("Genetic", GeneticSearch(cons_size=cons_size, n_iter=20, pop_size=20, mut_prob=0.2, metric=metric))
     ]
 
 @pytest.fixture

@@ -255,9 +255,7 @@ class GeneticAlgorithm:
 
     def step(self) -> "GeneticAlgorithm":
         """
-        Execute one iteration (generation) of the genetic algorithm:
-        selection, crossover, mutation, and elitist replacement.
-        """
+        Execute one iteration (generation) of the genetic algorithm."""
         new_population = deepcopy(self.population)
         new_population.clear()
 
@@ -309,7 +307,7 @@ class GeneticAlgorithm:
         self.current_generation += 1
         return self
 
-    def run(self, n_iter: int = 50, verbose: bool = False) -> None:
+    def run(self, n_iter: int = 50) -> None:
         """Run the genetic algorithm for a specified number of generations."""
         for i in range(n_iter):
             self.step()
@@ -318,8 +316,6 @@ class GeneticAlgorithm:
         """Return the best individual in the current population."""
         return self.population.best_score()
 
-
-# --- Genetic operators and utility functions ---
 
 def init_individual(ind_space: range = None, ind_size: int = None) -> Individual:
     """Create a random individual by sampling unique genes from the search space."""

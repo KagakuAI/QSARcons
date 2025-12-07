@@ -13,6 +13,7 @@ import pandas as pd
 
 from concurrent.futures import ProcessPoolExecutor
 
+from sklearn.base import is_classifier
 from sklearn.linear_model import LogisticRegression, Ridge, RidgeClassifier
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
@@ -80,9 +81,7 @@ REGRESSORS = {
 }
 
 CLASSIFIERS = {
-    "RidgeClassifier": RidgeClassifier,
     "LogisticRegression": LogisticRegression,
-    "LinearSVC": LinearSVC,
     # "SVC": SVC,
     "RandomForestClassifier": RandomForestClassifier,
     "XGBClassifier": XGBClassifier,
@@ -98,6 +97,12 @@ def _worker(func, args, kwargs):
         return func(*args, **kwargs)
     except Exception as e:
         return {"error": repr(e)}
+
+def get_predictions(estimator, X):
+    if is_classifier(estimator) and hasattr(estimator, "predict_proba"):
+        return estimator.predict_proba(X)[:, 1].tolist()
+    else:
+        return estimator.predict(X).tolist()
 
 def run_in_subprocess(func, *args, **kwargs):
     with ProcessPoolExecutor(max_workers=1) as ex:
@@ -154,14 +159,15 @@ def build_model(x_train, x_val, x_test, y_train, y_val, y_test, estimator_class,
 
     # 4. Train on train split only (not final training yet)
     estimator_instance.fit(x_train_scaled, y_train)
-    pred_train = list(estimator_instance.predict(x_train_scaled))
-    pred_val = list(estimator_instance.predict(x_val_scaled))
+    pred_train = get_predictions(estimator_instance, x_train_scaled)
+    pred_val = get_predictions(estimator_instance, x_val_scaled)
 
     # 5. Retrain model on full (train + val)
     x_full, y_full = np.vstack([x_train, x_val]), np.hstack([y_train, y_val])
     x_full_scaled, x_test_scaled = scale_descriptors(x_full, x_test)
+
     estimator_instance.fit(x_full_scaled, y_full)
-    pred_test = list(estimator_instance.predict(x_test_scaled))
+    pred_test = get_predictions(estimator_instance, x_test_scaled)
 
     # 6. Release memory
     del estimator_instance
