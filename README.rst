@@ -45,5 +45,5 @@ Input data are dataframes where the first column is molecule SMILES and the seco
 Colab
 ---------------------------------------------------------------------
 
-See an example in `QSARcons pipeline <https://colab.research.google.com/github/KagakuAI/QSARcons/blob/main/colab/Notebook_1_QSARcons_pipeline.ipynb>`_
+See an example in `QSARcons pipeline <https://colab.research.google.com/github/KagakuAI/QSARcons/blob/main/colab/Notebook_1_QSARcons_pipeline.ipynb>`_ .
 
