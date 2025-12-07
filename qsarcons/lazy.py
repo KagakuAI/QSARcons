@@ -68,7 +68,6 @@ DESCRIPTORS = {
     "pharm2D-pmapper": MoleculeTransformer(featurizer=Pharmacophore2D(factory='pmapper'), dtype=float),
 }
 
-
 REGRESSORS = {
     "RidgeRegression": Ridge,
     "PLSRegression": PLSRegression,
@@ -98,12 +97,6 @@ def _worker(func, args, kwargs):
     except Exception as e:
         return {"error": repr(e)}
 
-def get_predictions(estimator, X):
-    if is_classifier(estimator) and hasattr(estimator, "predict_proba"):
-        return estimator.predict_proba(X)[:, 1].tolist()
-    else:
-        return estimator.predict(X).tolist()
-
 def run_in_subprocess(func, *args, **kwargs):
     with ProcessPoolExecutor(max_workers=1) as ex:
         future = ex.submit(_worker, func, args, kwargs)
@@ -131,6 +124,11 @@ def scale_descriptors(x_train, x_test):
     scaler.fit(x_train)
     return scaler.transform(x_train), scaler.transform(x_test)
 
+def get_predictions(estimator, X):
+    if is_classifier(estimator) and hasattr(estimator, "predict_proba"):
+        return estimator.predict_proba(X)[:, 1].tolist()
+    else:
+        return estimator.predict(X).tolist()
 
 def build_model(x_train, x_val, x_test, y_train, y_val, y_test, estimator_class, hopt=True):
 

@@ -138,7 +138,7 @@ class SystematicSearch(ConsensusSearch):
 
 class GeneticSearch(ConsensusSearch):
     """Genetic algorithm-based search for optimal regression consensus. """
-    def __init__(self, cons_size=10, n_iter=200, pop_size=50, mut_prob=0.2, metric="mae", cons_size_candidates=None):
+    def __init__(self, cons_size=10, n_iter=50, pop_size=50, mut_prob=0.2, metric="mae", cons_size_candidates=None):
         super().__init__(cons_size, cons_size_candidates, metric)
         self.pop_size = pop_size
         self.n_iter = n_iter
