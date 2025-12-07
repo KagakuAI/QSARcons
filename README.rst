@@ -30,6 +30,18 @@ Installation
 
     pip install qsarcons
 
+QSARcons benchmarking
+------------------------
+``QSARcons`` can be easily benchmarked against alternative approaches. For that, just call the default pipeline function below.
+Input data are dataframes where the first column is molecule SMILES and the second column is molecule property
+(regression or binary classification).
+
+.. code-block:: python
+
+    from qsarcons.cli import run_qsarcons
+
+    test_pred = run_qsarcons(df_train, df_val, df_test, task="regression", output_folder="qsarcons_results")
+
 Colab
 ---------------------------------------------------------------------
 
