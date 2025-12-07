@@ -4,7 +4,8 @@ from typing import List, Union, Optional
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series, Index
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error,  roc_auc_score
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import roc_auc_score, average_precision_score, log_loss, brier_score_loss
 from scipy.stats import spearmanr
 from .genopt import Individual, GeneticAlgorithm
 
@@ -14,6 +15,9 @@ METRIC_MODES = {
     "r2": "maximize",
     "rank": "maximize",
     "roc_auc_score": "maximize",
+    "average_precision_score": "maximize",
+    "log_loss": "maximize",
+    "brier_score_loss": "maximize",
     "auto": "maximize",
 }
 
@@ -36,6 +40,8 @@ def calc_accuracy(y_true, y_pred, metric=None):
         return acc.item() if hasattr(acc, 'item') else acc
     elif metric == 'roc_auc_score':
         return roc_auc_score(y_true, y_pred)
+    elif metric == 'average_precision_score':
+        return average_precision_score(y_true, y_pred)
     elif metric == 'auto':
         if all(isinstance(v, (int, float)) for v in y_true):
             mae_norm = 1 / (1 + mean_absolute_error(y_true, y_pred))
@@ -44,8 +50,7 @@ def calc_accuracy(y_true, y_pred, metric=None):
             spearmanr_norm = max(0.0, spearmanr(y_true, y_pred)[0])
             return np.mean([mae_norm, rmse_norm, r2_norm, spearmanr_norm])
         else:
-            roc_auc = roc_auc_score(y_true, y_pred)
-            return roc_auc
+            return np.mean([roc_auc_score(y_true, y_pred), average_precision_score(y_true, y_pred)])
 
 class ConsensusSearch:
     """Base class for consensus model selection."""
@@ -54,27 +59,20 @@ class ConsensusSearch:
         self.cons_size = cons_size
         self.cons_size_candidates = cons_size_candidates or [2, 3, 4, 5, 6, 7, 8, 9, 10]
         self.metric = metric
-        self.n_filtered_models = None
-
-    def _get_baseline_prediction(self, y: List) -> List:
-        return list(np.mean(y) for _ in y)
 
     def _filter_models(self, x: DataFrame, y: List) -> DataFrame:
         """Filter out underperformed models based on baseline metric performance."""
 
         metric = "r2" if detect_task_type(y) == "regression" else "roc_auc_score"
-
         mode = METRIC_MODES[metric]
-        baseline_pred = self._get_baseline_prediction(y)
-        baseline_score = calc_accuracy(y, baseline_pred, metric=metric)
+        baseline_score = 0 if detect_task_type(y) == "regression" else 0.5
 
         filtered_cols = [col for col in x.columns if
                          (mode == 'maximize' and calc_accuracy(y, x[col], metric=metric) > baseline_score) or
                          (mode == 'minimize' and calc_accuracy(y, x[col], metric=metric) < baseline_score)]
 
         filtered = x[filtered_cols]
-        self.n_filtered_models = filtered.shape[1]
-        if self.n_filtered_models == 0:
+        if filtered.shape[1] == 0:
             print("No models left after filtering. All models selected.")
             return x
         return filtered

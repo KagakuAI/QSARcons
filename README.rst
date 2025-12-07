@@ -16,7 +16,7 @@ QSARcons provides a two-layer workflow.
    The individual model building pipeline is kept simple, without advanced data preprocessing. Optional in-house stepwise hyperparameter
    optimization is available for all ML methods.
 
-**2. Consensus optimization**
+**2. Consensus search**
    Identify the optimal subset of QSAR models using several search strategies:
 
 - Random search
