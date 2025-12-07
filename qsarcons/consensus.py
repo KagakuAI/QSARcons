@@ -76,13 +76,11 @@ def calc_accuracy(y_true, y_pred, metric='mae'):
         return f1_score(y_true, y_pred, average='weighted')
     elif metric == 'auto':
         if all(isinstance(v, (int, float)) for v in y_true):
-            mae = mean_absolute_error(y_true, y_pred)
-            rmse = root_mean_squared_error(y_true, y_pred)
-            r2_val = r2_score(y_true, y_pred)
-            mae_score = 1 / (1 + mae)
-            rmse_score = 1 / (1 + rmse)
-            r2_score_norm = max(0.0, r2_val)
-            return np.mean([mae_score, rmse_score, r2_score_norm])
+            mae_norm = 1 / (1 + mean_absolute_error(y_true, y_pred))
+            rmse_norm = 1 / (1 + root_mean_squared_error(y_true, y_pred))
+            r2_norm = max(0.0, r2_score(y_true, y_pred))
+            spearmanr_norm = spearmanr(y_true, y_pred)[0]
+            return np.mean([mae_norm, rmse_norm, r2_norm, spearmanr_norm])
         else:
             acc = accuracy_score(y_true, y_pred)
             bal_acc = balanced_accuracy_score(y_true, y_pred)
