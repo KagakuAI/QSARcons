@@ -57,7 +57,7 @@ def consensus_searchers():
     cons_size = "auto"
     return [
         ("Best", SystematicSearch(cons_size=1, metric=metric)),
-        ("Random", RandomSearch(cons_size=cons_size, n_iter=200, metric=metric)),
+        ("Random", RandomSearch(cons_size=cons_size, n_iter=50, metric=metric)),
         ("Systematic", SystematicSearch(cons_size=cons_size, metric=metric)),
         ("Genetic", GeneticSearch(cons_size=cons_size, n_iter=20, metric=metric))
     ]

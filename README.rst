@@ -38,9 +38,22 @@ Input data are dataframes where the first column is molecule SMILES and the seco
 
 .. code-block:: python
 
+    import polaris
+    from sklearn.model_selection import train_test_split
     from qsarcons.cli import run_qsarcons
 
+    # Load Polaris benchmark
+    benchmark = polaris.load_benchmark("tdcommons/caco2-wang")
+    data_train, data_test = benchmark.get_train_test_split()
+
+    df_train, df_test = data_train.as_dataframe(), data_test.as_dataframe()
+    df_train, df_val = train_test_split(df_train, test_size=0.2, random_state=42)
+
+    # Run QSARcons
     test_pred = run_qsarcons(df_train, df_val, df_test, task="regression", output_folder="results")
+
+    # Evaluate predictions
+    results = benchmark.evaluate(test_pred)
 
 Colab
 ---------------------------------------------------------------------

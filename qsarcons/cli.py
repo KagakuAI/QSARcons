@@ -7,7 +7,7 @@ def run_qsarcons(df_train, df_val, df_test, task="regression", output_folder=Non
 
     # 1. Fill fake test prop
     if len(df_test.columns) == 1:
-        df_test[1] = [0 for i in df_test.index]
+        df_test[1] = [None for i in df_test.index]
 
     # 2. Build multiple models
     lazy_ml = LazyML(task=task, hopt=True, output_folder=output_folder, verbose=True)
@@ -24,5 +24,7 @@ def run_qsarcons(df_train, df_val, df_test, task="regression", output_folder=Non
     gen_search = GeneticSearch(cons_size="auto", metric="auto", n_iter=50)
     best_cons = gen_search.run(x_val, true_val)
     pred_test = gen_search.predict_cons(x_test[best_cons])
+
+    print(f"Genetic consensus: {best_cons}")
 
     return pred_test
