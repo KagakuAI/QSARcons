@@ -76,4 +76,4 @@ QSARcons idea is that diverse and strong individual models can be combined to ev
 Currently, two versions are under development:
 
 - **QSARcons Basic:** includes ``RDKit`` descriptors + ``scikit-learn`` ML methods
-- **QSARcons Pro:** will include **QSARcons Basic** + other workflows for building individual models (e.g.``chemprop``) to combine traditional and advanced modelling approaches into stronger consensuses.
+- **QSARcons Pro:** will include **QSARcons Basic** + other workflows for building individual models (e.g. ``chemprop``) to combine traditional and advanced modelling approaches into stronger consensuses.
