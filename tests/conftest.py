@@ -59,6 +59,6 @@ def consensus_searchers():
         ("Best", SystematicSearch(cons_size=1, metric=metric)),
         ("Random", RandomSearch(cons_size=cons_size, n_iter=200, metric=metric)),
         ("Systematic", SystematicSearch(cons_size=cons_size, metric=metric)),
-        ("Genetic", GeneticSearch(cons_size=cons_size, n_iter=20, pop_size=20, mut_prob=0.2, metric=metric))
+        ("Genetic", GeneticSearch(cons_size=cons_size, n_iter=20, metric=metric))
     ]
 

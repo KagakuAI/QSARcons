@@ -2,6 +2,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import get_scorer
+from sklearn.base import is_classifier
 
 
 DEFAULT_PARAM_GRID_REGRESSORS = {
@@ -98,7 +99,13 @@ DEFAULT_PARAM_GRID_CLASSIFIERS = {
     },
 }
 
-def single_split_score(est, x, y, scoring, test_size=0.2, random_state=42):
+def get_predictions(estimator, X):
+    if is_classifier(estimator) and hasattr(estimator, "predict_proba"):
+        return estimator.predict_proba(X)[:, 1].tolist()
+    else:
+        return estimator.predict(X).tolist()
+
+def single_split_score(est, x, y, scoring, test_size=0.4, random_state=42):
     """
     Performs a single train/val split inside the function,
     fits the estimator, and returns the validation score.
@@ -111,7 +118,7 @@ def single_split_score(est, x, y, scoring, test_size=0.2, random_state=42):
     )
 
     est.fit(x_train, y_train)
-    y_pred = est.predict(x_val)
+    y_pred = get_predictions(est, x_val)
 
     scorer = get_scorer(scoring)
     score = scorer._score_func(y_val, y_pred)

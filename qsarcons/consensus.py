@@ -27,6 +27,7 @@ def detect_task_type(y):
 
 def calc_accuracy(y_true, y_pred, metric=None):
     """Compute performance metrics for regression or classification tasks."""
+
     y_true, y_pred = list(y_true), list(y_pred)
 
     if metric == 'mae':

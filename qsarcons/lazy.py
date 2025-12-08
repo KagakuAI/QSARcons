@@ -146,7 +146,7 @@ def build_model(x_train, x_val, x_test, y_train, y_val, y_test, estimator_class,
             else DEFAULT_PARAM_GRID_REGRESSORS.get(est_name)
         )
 
-        scoring = "accuracy" if is_classification else "r2"
+        scoring = "roc_auc" if is_classification else "r2"
 
         estimator_instance = estimator_class()
         stepwise_hopt = StepwiseHopt(estimator_instance, param_grid, scoring=scoring, verbose=False)
