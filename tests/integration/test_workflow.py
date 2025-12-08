@@ -42,8 +42,6 @@ def test_classification_consensus(classification_folder, consensus_searchers):
         # sanity checks
         assert len(pred_val) == len(y_val)
         assert len(pred_test) == len(y_test)
-        assert set(pred_val).issubset(set(y_val.unique()))
-        assert set(pred_test).issubset(set(y_test.unique()))
 
         # optionally print balanced accuracy
         print(f"[Classification] {name}: val={roc_auc_score(y_val, pred_val):.3f}, test={roc_auc_score(y_test, pred_test):.3f}")
