@@ -7,6 +7,15 @@ by the large number of available chemical descriptors and machine learning metho
 different QSAR models. Selecting the most effective subset - and combining them into a consensus - can significantly
 improve prediction accuracy and robustness.
 
+Motivation
+--------------------------------------------------------------------
+
+**1. Simple design** - unlike many existing frameworks, QSARcons focuses on simplicity and ease of use. It minimizes the number of parameters a user must adjust, making QSAR model construction more accessible and intuitive.
+
+**2. Traditional QSAR** - QSARcons includes a wide range of traditional molecular descriptors and machine learning algorithms, providing a transparent baseline for comparison with more advanced approaches like deep learning-based or complex QSAR workflows.
+
+**3. Universal workflow** - QSARcons to be applied to any type of chemical property modeling.
+
 Overview
 --------------------------------------------------------------------
 QSARcons provides a two-layer workflow.
@@ -31,7 +40,7 @@ Installation
     pip install qsarcons
 
 QSARcons benchmarking
-------------------------
+--------------------------------------------------------------------
 ``QSARcons`` can be easily benchmarked against alternative approaches. For that, just call the default pipeline function below.
 Input data are dataframes where the first column is molecule SMILES and the second column is molecule property
 (regression or binary classification).
