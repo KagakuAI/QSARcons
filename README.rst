@@ -10,11 +10,11 @@ and then genetic algorithm to smartly optimize the subset of models delivering t
 Motivation
 --------------------------------------------------------------------
 
-**1. Simple design** - unlike many existing frameworks, ``QSARcons`` focuses on simplicity and ease of use.
+**1. Simple design**: ``QSARcons`` focuses on simplicity of use. The default pipeline just requires training and test data.
 
-**2. Traditional QSAR** - ``QSARcons`` includes a wide range of traditional molecular descriptors and machine learning algorithms, providing a transparent baseline for comparison with more advanced approaches like deep learning-based or complex QSAR workflows.
+**2. Traditional QSAR**: ``QSARcons`` includes a wide range of traditional molecular descriptors and machine learning algorithms, providing a transparent baseline for comparison with more advanced approaches like deep learning-based or complex QSAR workflows.
 
-**3. Universal workflow** - ``QSARcons`` cab be applied to any type of chemical property modeling.
+**3. Universal workflow** - ``QSARcons`` cab be applied to any type of chemical property modelling.
 
 Overview
 --------------------------------------------------------------------
@@ -42,8 +42,7 @@ Installation
 QSARcons benchmarking
 --------------------------------------------------------------------
 ``QSARcons`` can be easily benchmarked against alternative approaches. For that, just call the default pipeline function below.
-Input data are dataframes where the first column is molecule SMILES and the second column is molecule property
-(regression or binary classification).
+Input data are dataframes where the first column is molecule SMILES and the second column is molecule property (regression or binary classification).
 
 .. code-block:: python
 
