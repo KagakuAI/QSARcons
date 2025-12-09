@@ -2,10 +2,10 @@
 QSARcons - smart searching for consensus of QSAR models
 --------------------------------------------------------------------
 
-``QSARcons`` is a package designed to identify optimal consensus combinations of QSAR models. The project is motivated
-by the large number of available chemical descriptors and machine learning methods, which can be combined into many
-different QSAR models. Selecting the most effective subset - and combining them into a consensus - can significantly
-improve prediction accuracy and robustness.
+The motivation behind this project is that there any many available chemical descriptors and machine learning methods,
+and usually it is not obvious which combination to prefer for modelling the target property of the molecule.
+Therefore, the idea is just to build multiple (>100) simple individual QSAR models with diverse descriptors and algorithms,
+and then genetic algorithm to smartly optimize the subset of models delivering the best performance on the validation dataset.
 
 Motivation
 --------------------------------------------------------------------
