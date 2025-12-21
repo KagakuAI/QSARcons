@@ -1,11 +1,11 @@
 
-QSARcons - smart searching for consensus of QSAR models
+QSARcons - smart search for consensus of QSAR models
 --------------------------------------------------------------------
 
-The motivation behind this project is that there any many available chemical descriptors and machine learning methods,
-and usually it is not obvious which combination to prefer for modelling the target property of the molecule.
+The motivation behind this project is that there are many available chemical descriptors and machine learning methods,
+and usually, it is not obvious which combination to prefer for modelling the target property of the molecule.
 Therefore, the idea is just to build multiple (>100) simple individual QSAR models with diverse descriptors and algorithms,
-and then genetic algorithm to smartly optimize the subset of models delivering the best performance on the validation dataset.
+and then a genetic algorithm to smartly optimize the subset of models delivering the best performance on the validation dataset.
 
 Motivation
 --------------------------------------------------------------------
@@ -14,7 +14,7 @@ Motivation
 
 **2. Traditional QSAR**: ``QSARcons`` includes a wide range of traditional molecular descriptors and machine learning algorithms, providing a transparent baseline for comparison with more advanced approaches like deep learning-based or complex QSAR workflows.
 
-**3. Universal workflow** - ``QSARcons`` cab be applied to any type of chemical property modelling.
+**3. Universal workflow** - ``QSARcons``can be applied to any type of chemical property modelling.
 
 Overview
 --------------------------------------------------------------------
@@ -70,8 +70,7 @@ See an example in `QSARcons pipeline <https://colab.research.google.com/github/K
 
 QSARcons Basic vs. QSARcons Pro
 ---------------------------------------------------------------------
-
-QSARcons idea is that diverse and strong individual models can be combined to even stronger consensus.
+The QSARcons idea is that diverse and strong individual models can be combined to even stronger consensus.
 Currently, two versions are under development:
 
 - **QSARcons Basic:** includes ``RDKit`` descriptors + ``scikit-learn`` ML methods
