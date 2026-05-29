@@ -109,6 +109,7 @@ class Population:
 
     def rank(self):
         """Assign rank numbers to individuals after sorting."""
+        self.sort()
         for rank, ind in enumerate(reversed(self), 1):
             ind.rank = rank
 
@@ -183,6 +184,7 @@ class GeneticAlgorithm:
         mutation_prob: float = 0.2,
         elitism: bool = True,
         random_seed=42,
+        verbose: bool = False,
     ) -> None:
 
         self.task = task
@@ -190,6 +192,7 @@ class GeneticAlgorithm:
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
         self.random_seed = random_seed
+        self.verbose = verbose
 
         # genetic operators
         self.selector = tournament_selection
@@ -266,7 +269,7 @@ class GeneticAlgorithm:
             mother = mating_pool.pop(randint(0, len(mating_pool) - 1))
             father = mating_pool.pop(randint(0, len(mating_pool) - 1))
 
-            sister, brother = self.pair_crossover(mother, father)
+            sister, brother = self.crossover(mother, father)
             sister_mutated = self.mutate(sister, self.ind_space, prob=self.mutation_prob)
             brother_mutated = self.mutate(brother, self.ind_space, prob=self.mutation_prob)
 
@@ -311,6 +314,8 @@ class GeneticAlgorithm:
         """Run the genetic algorithm for a specified number of generations."""
         for i in range(n_iter):
             self.step()
+            if self.verbose:
+                print(f"Iteration {self.current_generation}: best score -> {self.best_solution.score}")
 
     def best_individual(self) -> Individual:
         """Return the best individual in the current population."""

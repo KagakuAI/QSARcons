@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import get_scorer
 from sklearn.base import is_classifier
+from qsarcons.logging import OutputSuppressor
 
 
 DEFAULT_PARAM_GRID_REGRESSORS = {
@@ -175,7 +176,7 @@ class StepwiseHopt:
             if self.scoring is None or "neg" in str(self.scoring):
                 best_val, best_score = max(results, key=lambda x: x[1])  # higher is better
             else:
-                best_val, best_score = max(results, key=lambda x: x[1])
+                best_val, best_score = min(results, key=lambda x: x[1])
 
             best_params[param] = best_val
             current_step += len(options)

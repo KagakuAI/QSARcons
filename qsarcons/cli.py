@@ -23,7 +23,7 @@ def run_qsarcons(df_train, df_val, df_test, task="regression", output_folder=Non
     # 3. Run genetic search
     gen_search = GeneticSearch(cons_size="auto", metric="auto", n_iter=50)
     best_cons = gen_search.run(x_val, true_val)
-    pred_test = gen_search.predict_cons(x_test[best_cons])
+    pred_test = gen_search.predict(x_test[best_cons])
 
     print(f"Genetic consensus: {best_cons}")
 

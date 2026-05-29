@@ -14,8 +14,8 @@ def test_consensus_search(regression_folder, consensus_searchers):
 
     for name, searcher in consensus_searchers:
         best = searcher.run(x_val, y_val)
-        pred_val = searcher.predict_cons(x_val[best])
-        pred_test = searcher.predict_cons(x_test[best])
+        pred_val = searcher.predict(x_val[best])
+        pred_test = searcher.predict(x_test[best])
 
         # sanity checks
         assert len(pred_val) == len(y_val)
@@ -36,8 +36,8 @@ def test_classification_consensus(classification_folder, consensus_searchers):
 
     for name, searcher in consensus_searchers:
         best = searcher.run(x_val, y_val)
-        pred_val = searcher.predict_cons(x_val[best])
-        pred_test = searcher.predict_cons(x_test[best])
+        pred_val = searcher.predict(x_val[best])
+        pred_test = searcher.predict(x_test[best])
 
         # sanity checks
         assert len(pred_val) == len(y_val)

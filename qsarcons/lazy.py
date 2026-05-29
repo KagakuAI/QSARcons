@@ -246,6 +246,6 @@ class LazyML:
                 if self.verbose:
                     process = psutil.Process()
                     mem_gb = process.memory_info().rss / (1024 ** 3)
-                    print(f"  ↳ Finished in {elapsed_min:.2f} min | Memory usage: {mem_gb:.3f} GB")
+                    print(f"  > Finished in {elapsed_min:.2f} min | Memory usage: {mem_gb:.3f} GB")
 
         return None

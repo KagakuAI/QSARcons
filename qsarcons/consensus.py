@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series, Index
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
-from sklearn.metrics import roc_auc_score, average_precision_score, log_loss, brier_score_loss
+from sklearn.metrics import roc_auc_score, average_precision_score, balanced_accuracy_score
 from scipy.stats import spearmanr
 from .genopt import Individual, GeneticAlgorithm
 
@@ -14,10 +14,7 @@ METRIC_MODES = {
     "rmse": "minimize",
     "r2": "maximize",
     "rank": "maximize",
-    "roc_auc_score": "maximize",
-    "average_precision_score": "maximize",
-    "log_loss": "maximize",
-    "brier_score_loss": "maximize",
+    "balanced_accuracy_score": "maximize",
     "auto": "maximize",
 }
 
@@ -39,34 +36,36 @@ def calc_accuracy(y_true, y_pred, metric=None):
     elif metric == 'rank':
         acc, _ = spearmanr(y_true, y_pred)
         return acc.item() if hasattr(acc, 'item') else acc
-    elif metric == 'roc_auc_score':
-        return roc_auc_score(y_true, y_pred)
-    elif metric == 'average_precision_score':
-        return average_precision_score(y_true, y_pred)
+    elif metric == 'balanced_accuracy_score':
+        return balanced_accuracy_score(y_true, y_pred)
     elif metric == 'auto':
-        if all(isinstance(v, (int, float)) for v in y_true):
+        if detect_task_type(y_true) == "regression":
             mae_norm = 1 / (1 + mean_absolute_error(y_true, y_pred))
             rmse_norm = 1 / (1 + root_mean_squared_error(y_true, y_pred))
             r2_norm = max(0.0, r2_score(y_true, y_pred))
             spearmanr_norm = max(0.0, spearmanr(y_true, y_pred)[0])
             return np.mean([mae_norm, rmse_norm, r2_norm, spearmanr_norm])
-        else:
-            return np.mean([roc_auc_score(y_true, y_pred), average_precision_score(y_true, y_pred)])
+        elif detect_task_type(y_true) == "classification":
+            return balanced_accuracy_score(y_true, y_pred)
 
 class ConsensusSearch:
     """Base class for consensus model selection."""
 
     def __init__(self, cons_size=9, cons_size_candidates=None, metric=None):
         self.cons_size = cons_size
-        self.cons_size_candidates = cons_size_candidates or [2, 3, 4, 5, 6, 7, 8, 9, 10]
+        self.cons_size_candidates = cons_size_candidates or range(2, 16, 2)
         self.metric = metric
+        self._task_type = None
 
     def _filter_models(self, x: DataFrame, y: List) -> DataFrame:
         """Filter out underperformed models based on baseline metric performance."""
 
-        metric = "r2" if detect_task_type(y) == "regression" else "roc_auc_score"
+        if self._task_type == "classification":
+            x = (x >= 0.5).astype(int)
+
+        metric = "r2" if self._task_type == "regression" else "balanced_accuracy_score"
         mode = METRIC_MODES[metric]
-        baseline_score = 0 if detect_task_type(y) == "regression" else 0.5
+        baseline_score = 0 if self._task_type == "regression" else 0.5
 
         filtered_cols = [col for col in x.columns if
                          (mode == 'maximize' and calc_accuracy(y, x[col], metric=metric) > baseline_score) or
@@ -79,10 +78,14 @@ class ConsensusSearch:
         return filtered
 
     def _run_with_cons_size(self, x, y, cons_size):
-        return NotImplementedError
+        if self._task_type == "classification":
+            x = (x >= 0.5).astype(int)
+        return self._run_with_cons_size(x, y, cons_size)
 
     def run(self, x: DataFrame, y: List):
         """Execute consensus model search."""
+
+        self._task_type = detect_task_type(y)
 
         x_filtered = self._filter_models(x, y)
         if len(x_filtered.columns) < max(self.cons_size_candidates):
@@ -98,7 +101,7 @@ class ConsensusSearch:
             mode = METRIC_MODES[self.metric]
             for size in self.cons_size_candidates:
                 candidate = self._run_with_cons_size(x_filtered, y, size)
-                y_pred = self.predict_cons(x_filtered[candidate])
+                y_pred = self.predict(x_filtered[candidate])
                 score = calc_accuracy(y, y_pred, self.metric)
                 if best_score is None or \
                    (mode == 'maximize' and score > best_score) or \
@@ -107,8 +110,30 @@ class ConsensusSearch:
                     best_cons = candidate
             return list(best_cons)
 
-    def predict_cons(self, x_subset: DataFrame) -> List:
-        return list(x_subset.mean(axis=1))
+    def predict(self, x_subset: DataFrame) -> List:
+
+        if self._task_type == "regression":
+            return list(x_subset.mean(axis=1))
+
+        elif self._task_type == "classification":
+            # Convert probabilities to 0/1 per model
+            binary_preds = (x_subset >= 0.5).astype(int)
+
+            # Majority voting across models
+            votes = binary_preds.sum(axis=1)
+            majority = (votes >= (binary_preds.shape[1] / 2)).astype(int)
+            return list(majority)
+        else:
+            raise ValueError("Task type not set. Run `.run()` first.")
+
+    def predict_proba(self, x_subset: DataFrame) -> List:
+
+        if self._task_type == "regression":
+            raise ValueError("predict_proba is not available for regression consensus models.")
+        elif self._task_type == "classification":
+            return list(x_subset.mean(axis=1))
+        else:
+            raise ValueError("Task type not set. Run `.run()` first.")
 
 class RandomSearch(ConsensusSearch):
     """Randomized search for optimal regression consensus."""
@@ -122,7 +147,7 @@ class RandomSearch(ConsensusSearch):
         results = []
         for _ in range(self.n_iter):
             cols = random.sample(list(x.columns), cons_size)
-            y_pred = self.predict_cons(x[cols])
+            y_pred = self.predict(x[cols])
             score = calc_accuracy(y, y_pred, self.metric)
             results.append((cols, score))
         results.sort(key=lambda tup: tup[1], reverse=METRIC_MODES[self.metric] == 'maximize')
@@ -145,19 +170,20 @@ class SystematicSearch(ConsensusSearch):
 class GeneticSearch(ConsensusSearch):
     """Genetic algorithm-based search for optimal regression consensus. """
 
-    def __init__(self, n_iter=50, **kwargs):
+    def __init__(self, n_iter=50, verbose=False, **kwargs):
         super().__init__(**kwargs)
         self.n_iter = n_iter
+        self.verbose = verbose
 
     def _run_with_cons_size(self, x, y, cons_size) -> Index:
 
         def objective(ind: Individual) -> float:
-            y_pred = self.predict_cons(x.iloc[:, list(ind)])
+            y_pred = self.predict(x.iloc[:, list(ind)])
             return calc_accuracy(y, y_pred, self.metric)
 
         space = range(len(x.columns))
         task = METRIC_MODES[self.metric]
-        ga = GeneticAlgorithm(task=task, pop_size=50, crossover_prob=0.90, mutation_prob=0.2, elitism=True)
+        ga = GeneticAlgorithm(task=task, pop_size=100, crossover_prob=0.90, mutation_prob=0.2, elitism=True, verbose=False)
         ga.set_fitness(objective)
         ga.initialize(space, ind_size=cons_size)
         ga.run(n_iter=self.n_iter)
