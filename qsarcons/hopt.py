@@ -1,9 +1,8 @@
 import time
-from concurrent.futures import ThreadPoolExecutor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import get_scorer
+from sklearn.utils.multiclass import type_of_target
 from sklearn.base import is_classifier
-from qsarcons.logging import OutputSuppressor
 
 
 DEFAULT_PARAM_GRID_REGRESSORS = {
@@ -106,7 +105,7 @@ def get_predictions(estimator, X):
     else:
         return estimator.predict(X).tolist()
 
-def single_split_score(est, x, y, scoring, test_size=0.4, random_state=42):
+def single_split_score(est, x, y, scoring, test_size=0.2, random_state=42):
     """
     Performs a single train/val split inside the function,
     fits the estimator, and returns the validation score.
@@ -120,12 +119,10 @@ def single_split_score(est, x, y, scoring, test_size=0.4, random_state=42):
 
     est.fit(x_train, y_train)
     y_pred = get_predictions(est, x_val)
-
     scorer = get_scorer(scoring)
     score = scorer._score_func(y_val, y_pred)
 
     return score
-
 
 class StepwiseHopt:
     """
@@ -135,21 +132,27 @@ class StepwiseHopt:
     while keeping the other parameters fixed at their current best values.
     """
 
-    def __init__(self, estimator, param_grid, scoring=None, verbose=True):
+    def __init__(self, estimator, param_grid, verbose=True):
         self.estimator = estimator
         self.param_grid = param_grid
-        self.scoring = scoring
         self.verbose = verbose
         self.best_params_ = {}
 
-    def _evaluate_model(self, param, val, x, y, best_params, n_jobs):
+    def _evaluate_model(self, param, val, x, y, best_params, scoring):
 
         params = {**best_params, param: val}
         est = self.estimator.__class__(**params)
-        score = single_split_score(est, x, y, scoring=self.scoring)
+        score = single_split_score(est, x, y, scoring=scoring)
         return val, score
 
     def fit(self, x, y):
+
+        if type_of_target(y) == "continuous":
+            scoring = "r2"
+        elif type_of_target(y) == "binary":
+            scoring = "balanced_accuracy"
+        else:
+            raise ValueError("Unknown target type")
 
         if self.verbose:
             total_steps = sum(len(v) for v in self.param_grid.values())
@@ -167,16 +170,11 @@ class StepwiseHopt:
             if self.verbose:
                 print(f"\nOptimizing '{param}' ({len(options)} options)")
 
-            n_jobs = len(options)
-            args = [(param, val, x, y, best_params, n_jobs) for val in options]
-            with ThreadPoolExecutor(max_workers=n_jobs) as executor:
-                results = list(executor.map(lambda a: self._evaluate_model(*a), args))
+            args = [(param, val, x, y, best_params, scoring) for val in options]
+            results = [self._evaluate_model(*a) for a in args]
 
             # Select best value
-            if self.scoring is None or "neg" in str(self.scoring):
-                best_val, best_score = max(results, key=lambda x: x[1])  # higher is better
-            else:
-                best_val, best_score = min(results, key=lambda x: x[1])
+            best_val, best_score = max(results, key=lambda x: x[1])  # higher is better
 
             best_params[param] = best_val
             current_step += len(options)

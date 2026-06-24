@@ -14,7 +14,7 @@ Motivation
 
 **2. Traditional QSAR**: ``QSARcons`` includes a wide range of traditional molecular descriptors and machine learning algorithms, providing a transparent baseline for comparison with more advanced approaches like deep learning-based or complex QSAR workflows.
 
-**3. Universal workflow** - ``QSARcons``can be applied to any type of chemical property modelling.
+**3. Universal workflow** - ``QSARcons`` can be applied to any type of chemical property modelling.
 
 Overview
 --------------------------------------------------------------------
@@ -46,22 +46,22 @@ Input data are dataframes where the first column is molecule SMILES and the seco
 
 .. code-block:: python
 
-    import polaris
-    from sklearn.model_selection import train_test_split
-    from qsarcons.cli import run_qsarcons
+    from datasets import load_dataset
+    from qsarcons.meta import ConsensusModel
 
-    # Load Polaris benchmark
-    benchmark = polaris.load_benchmark("tdcommons/caco2-wang")
-    data_train, data_test = benchmark.get_train_test_split()
+    train_df = load_dataset("openadmet/openadmet-expansionrx-challenge-data", split="train").to_pandas()
+    test_df = load_dataset("openadmet/openadmet-expansionrx-challenge-data", split="test").to_pandas()
 
-    df_train, df_test = data_train.as_dataframe(), data_test.as_dataframe()
-    df_train, df_val = train_test_split(df_train, test_size=0.2, random_state=42)
+    prop_name = "Caco-2 Permeability Efflux"
+    train_df = train_df[["SMILES", prop_name]].dropna()
+    test_df = test_df[["SMILES", prop_name]].dropna()
 
-    # Run QSARcons
-    test_pred = run_qsarcons(df_train, df_val, df_test, task="regression", output_folder="results")
+    output_folder = f"{prop_name}_qsarcons"
 
-    # Evaluate predictions
-    results = benchmark.evaluate(test_pred)
+    model = ConsensusModel(hopt=False, output_folder=output_folder, verbose=True)
+    test_df_pred = model.run_predict(train_df, test_df)
+
+    print(model.best_cons)
 
 Colab
 ---------------------------------------------------------------------

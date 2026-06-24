@@ -348,6 +348,11 @@ def one_point_crossover(mother: Individual, father: Individual) -> Tuple[Individ
         brother[cut:] = mother[cut:]
         if len(set(sister.container)) == len(set(brother.container)) == len(sister.container):
             break
+
+    valid = (len(set(sister.container)) == len(set(brother.container)) == len(sister))
+    if not valid:
+        return deepcopy(mother), deepcopy(father)
+
     return sister, brother
 
 

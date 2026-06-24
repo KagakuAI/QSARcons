@@ -3,45 +3,6 @@ import os
 import logging
 import threading
 
-class DisableLogger:
-    """Context‑manager that suppresses *all* logging inside its scope (thread-safe)."""
-
-    _lock = threading.Lock()
-    _active_count = 0  # counts nested/parallel suppressions
-
-    def __enter__(self):
-        with self._lock:
-            if DisableLogger._active_count == 0:
-                logging.disable(logging.CRITICAL)
-            DisableLogger._active_count += 1
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        with self._lock:
-            DisableLogger._active_count -= 1
-            if DisableLogger._active_count == 0:
-                logging.disable(logging.NOTSET)
-
-class HiddenPrints:
-    """Context‑manager that suppresses *print* output inside its scope (thread-safe)."""
-
-    _lock = threading.Lock()
-    _active_count = 0
-    _orig_stdout = sys.stdout
-
-    def __enter__(self):
-        with HiddenPrints._lock:
-            if HiddenPrints._active_count == 0:
-                HiddenPrints._orig_stdout = sys.stdout
-                sys.stdout = open(os.devnull, "w")
-            HiddenPrints._active_count += 1
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        with HiddenPrints._lock:
-            HiddenPrints._active_count -= 1
-            if HiddenPrints._active_count == 0:
-                sys.stdout.close()
-                sys.stdout = HiddenPrints._orig_stdout
-
 class OutputSuppressor:
     """
     Completely suppress ALL output:
