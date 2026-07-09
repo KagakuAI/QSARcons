@@ -24,14 +24,6 @@ DEFAULT_PARAM_GRID_REGRESSORS = {
         "learning_rate": [0.01, 0.05, 0.1, 0.3],
         "subsample": [0.6, 0.8, 1.0],
     },
-    "CatBoostRegressor": {
-        "iterations": [100, 300, 500],
-        "depth": [4, 6, 8, 10],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "l2_leaf_reg": [1, 3, 5, 7],
-        "bagging_temperature": [0, 0.5, 1.0],
-        "border_count": [32, 64, 128],
-    },
     "MLPRegressor": {
         "activation": ["relu", "tanh"],
         "learning_rate_init": [1e-4, 1e-3],
@@ -71,14 +63,6 @@ DEFAULT_PARAM_GRID_CLASSIFIERS = {
         "max_depth": [3, 6, 9],
         "learning_rate": [0.01, 0.05, 0.1, 0.3],
         "subsample": [0.6, 0.8, 1.0],
-    },
-    "CatBoostClassifier": {
-        "iterations": [100, 300, 500],
-        "depth": [4, 6, 8, 10],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "l2_leaf_reg": [1, 3, 5, 7],
-        "bagging_temperature": [0, 0.5, 1.0],
-        "border_count": [32, 64, 128],
     },
     "MLPClassifier": {
         "activation": ["relu", "tanh"],

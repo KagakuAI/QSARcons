@@ -18,7 +18,6 @@ dependencies = [
         "molfeat",
         "scikit-learn",
         "xgboost",
-        "catboost",
         "huggingface_hub",
         "pytest"
 ]

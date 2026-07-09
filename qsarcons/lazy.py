@@ -77,7 +77,6 @@ REGRESSORS = {
     "MLPRegressor": MLPRegressor,
     "RandomForestRegressor": RandomForestRegressor,
     "XGBRegressor": XGBRegressor,
-    "CatBoostRegressor": CatBoostRegressor,
 }
 
 CLASSIFIERS = {
@@ -86,28 +85,11 @@ CLASSIFIERS = {
     "RandomForestClassifier": RandomForestClassifier,
     "XGBClassifier": XGBClassifier,
     "MLPClassifier": MLPClassifier,
-    "CatBoostClassifier": CatBoostClassifier,
 }
 
 # ==========================================================
 # Utility Functions
 # ==========================================================
-def _worker(func, args, kwargs):
-    try:
-        return func(*args, **kwargs)
-    except Exception as e:
-        return {"error": repr(e)}
-
-def run_in_subprocess(func, *args, **kwargs):
-    with ProcessPoolExecutor(max_workers=1) as ex:
-        future = ex.submit(_worker, func, args, kwargs)
-        result = future.result()
-
-    if isinstance(result, dict) and "error" in result:
-        raise RuntimeError(result["error"])
-
-    return result
-
 def clean_descriptors(x):
     x = np.array(x, dtype=float)
     col_means = np.nanmean(x, axis=0)
@@ -232,18 +214,16 @@ class LazyML:
                     print(f"[{current_model}/{total_models}] Running model: {model_name}", flush=True)
 
                 start = time.time()
-                with OutputSuppressor():
-                    pred_train, pred_val, pred_test = run_in_subprocess(
-                        build_model,
-                        x_train,
-                        x_val,
-                        x_test,
-                        y_train,
-                        y_val,
-                        y_test,
-                        estimator,
-                        self.hopt
-                    )
+                pred_train, pred_val, pred_test = build_model(
+                    x_train,
+                    x_val,
+                    x_test,
+                    y_train,
+                    y_val,
+                    y_test,
+                    estimator,
+                    self.hopt
+                )
                 elapsed_min = (time.time() - start) / 60
 
                 # 4. Write predictions
